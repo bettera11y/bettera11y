@@ -19,15 +19,15 @@ npm install bettera11y
 ```ts
 import { audit, check, recommendedPreset } from "bettera11y";
 
-const result = await audit(
-  `<html><main><h1>Welcome</h1><img src="/hero.png" /></main></html>`,
-  { rules: recommendedPreset, filepath: "pages/index.html" },
-);
+const result = await audit(`<html><main><h1>Welcome</h1><img src="/hero.png" /></main></html>`, {
+    rules: recommendedPreset,
+    filepath: "pages/index.html"
+});
 
 const isClean = await check("# Heading", {
-  rules: recommendedPreset,
-  format: "markdown",
-  source: { kind: "inline", label: "Quick note" },
+    rules: recommendedPreset,
+    format: "markdown",
+    source: { kind: "inline", label: "Quick note" }
 });
 
 console.log(result.diagnostics);

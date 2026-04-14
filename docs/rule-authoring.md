@@ -8,17 +8,17 @@ Rules are pure analyzers that receive `RuleContext` and emit diagnostics.
 import type { RuleDefinition } from "bettera11y";
 
 export const myRule: RuleDefinition = {
-  meta: {
-    id: "my-rule-id",
-    description: "What the rule checks",
-    category: "semantics",
-    defaultSeverity: "warn",
-    tags: ["custom"],
-  },
-  async check(context) {
-    // return diagnostics
-    return [];
-  },
+    meta: {
+        id: "my-rule-id",
+        description: "What the rule checks",
+        category: "semantics",
+        defaultSeverity: "warn",
+        tags: ["custom"]
+    },
+    async check(context) {
+        // return diagnostics
+        return [];
+    }
 };
 ```
 
