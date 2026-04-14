@@ -1,12 +1,8 @@
 import { describe, expect, it } from "vitest";
-import { createEngine, defaultRules } from "../src";
+import { audit, defaultRules } from "../src";
 
 async function run(html: string) {
-  const result = await createEngine(defaultRules).run({
-    kind: "html",
-    source: { path: "fixture.html", language: "html" },
-    html,
-  });
+  const result = await audit(html, { rules: defaultRules, filepath: "fixture.html" });
   return result.diagnostics;
 }
 

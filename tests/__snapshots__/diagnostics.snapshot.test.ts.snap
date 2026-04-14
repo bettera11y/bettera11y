@@ -205,19 +205,19 @@ exports[`diagnostics snapshots > keeps diagnostics shape and remediation stable 
   },
   {
     "category": "aria",
-    "id": "ca1bd353011d0875",
+    "id": "b02dcac3e39fcff5",
     "location": {
       "end": {
         "column": 15,
-        "line": 8,
-        "offset": 176,
+        "line": 11,
+        "offset": 276,
       },
       "selector": "body:nth-of-type(1) > main:nth-of-type(1) > div:nth-of-type(2)",
       "sourcePath": "snapshot.html",
       "start": {
         "column": 11,
-        "line": 8,
-        "offset": 172,
+        "line": 11,
+        "offset": 272,
       },
     },
     "message": "Element with role="button" is missing an accessible name.",
@@ -234,19 +234,19 @@ exports[`diagnostics snapshots > keeps diagnostics shape and remediation stable 
   },
   {
     "category": "aria",
-    "id": "fea7d0f4d251cc4c",
+    "id": "3ff51cec50d32cc2",
     "location": {
       "end": {
         "column": 18,
-        "line": 6,
-        "offset": 107,
+        "line": 12,
+        "offset": 315,
       },
       "selector": "body:nth-of-type(1) > main:nth-of-type(1) > button:nth-of-type(2)",
       "sourcePath": "snapshot.html",
       "start": {
         "column": 11,
-        "line": 6,
-        "offset": 100,
+        "line": 12,
+        "offset": 308,
       },
     },
     "message": "ARIA boolean attribute "aria-hidden" must be "true" or "false".",

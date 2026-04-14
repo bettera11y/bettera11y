@@ -7,7 +7,8 @@ export type DiagnosticCategory =
   | "forms"
   | "media"
   | "landmarks"
-  | "keyboard";
+  | "keyboard"
+  | "system";
 
 export interface Position {
   line: number;

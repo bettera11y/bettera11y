@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   MockAdapter,
-  createEngine,
+  audit,
   createJsonReporter,
   createMachineReporter,
   createPrettyReporter,
@@ -10,16 +10,14 @@ import {
 
 describe("adapter and reporters", () => {
   it("mock adapter captures realtime diagnostics", async () => {
-    const engine = createEngine(defaultRules);
     const adapter = new MockAdapter({
-      emit: (input) => engine.run(input),
+      emit: (input) => audit(input, { rules: defaultRules }),
     });
 
     adapter.start();
     await adapter.onInput({
-      kind: "html",
-      source: { path: "adapter.html" },
-      html: "<img src='/missing-alt.png' />",
+      content: "<img src='/missing-alt.png' />",
+      source: { kind: "file", path: "adapter.html" },
     });
     adapter.stop();
 
@@ -30,11 +28,10 @@ describe("adapter and reporters", () => {
   });
 
   it("formats diagnostics in json, machine, and pretty output", async () => {
-    const result = await createEngine(defaultRules).run({
-      kind: "html",
-      source: { path: "reporter.html" },
-      html: "<button><svg></svg></button>",
-    });
+    const result = await audit(
+      "<button><svg></svg></button>",
+      { rules: defaultRules, filepath: "reporter.html" },
+    );
 
     const jsonOut = createJsonReporter().format(result);
     const machineOut = createMachineReporter().format(result);

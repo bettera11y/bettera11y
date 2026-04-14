@@ -1,9 +1,10 @@
 import {
-  createEngine,
+  audit as runAudit,
+  auditIncremental as runAuditIncremental,
+  startAuditSession,
   strictPreset,
-  translateSeverity,
-  type AuditInput,
-  type WatchSessionContract,
+  toAdapterDiagnostic,
+  type AuditSession,
 } from "../src";
 
 type ViteDiagnostic = {
@@ -19,40 +20,44 @@ type ViteDiagnostic = {
 };
 
 export async function createViteStyleSession(): Promise<{
-  session: WatchSessionContract;
+  session: AuditSession;
   audit: (id: string, code: string) => Promise<ViteDiagnostic[]>;
 }> {
-  const engine = createEngine(strictPreset);
-  const session = engine.createAuditSession();
+  const session = startAuditSession({ rules: strictPreset });
   await session.start();
 
   return {
     session,
     async audit(id, code) {
-      const input: AuditInput = {
-        kind: "virtual-file",
+      const result = await session.audit({
+        content: code,
+        filepath: id,
+        format: "tsx",
         source: {
+          kind: "file",
           path: id,
           language: "tsx",
         },
-        content: code,
-      };
+      });
 
-      const result = await session.run(input);
-
-      return result.diagnostics.map((diagnostic) => ({
-        id: diagnostic.id,
-        plugin: "vite-plugin-bettera11y",
-        message: diagnostic.message,
-        level: String(translateSeverity(diagnostic.severity, "vite")),
-        loc: diagnostic.location?.start
-          ? {
-              file: diagnostic.location.sourcePath,
-              line: diagnostic.location.start.line,
-              column: diagnostic.location.start.column,
-            }
-          : undefined,
-      }));
+      return result.diagnostics.map((diagnostic) => {
+        const mapped = toAdapterDiagnostic(diagnostic, "vite");
+        return {
+          id: diagnostic.id,
+          plugin: "vite-plugin-bettera11y",
+          message: diagnostic.message,
+          level: String(mapped.level),
+          loc: diagnostic.location?.start
+            ? {
+                file: diagnostic.location.sourcePath,
+                line: diagnostic.location.start.line,
+                column: diagnostic.location.start.column,
+              }
+            : undefined,
+        };
+      });
     },
   };
 }
+
+export { runAudit, runAuditIncremental };

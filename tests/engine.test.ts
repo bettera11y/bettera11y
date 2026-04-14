@@ -1,18 +1,20 @@
 import { describe, expect, it } from "vitest";
 import {
   BETTERA11Y_API_VERSION,
-  createEngine,
+  audit,
+  auditIncremental,
+  auditSync,
+  check,
+  checkSync,
   defaultRules,
+  startAuditSession,
   type RuleDefinition,
 } from "../src";
 
-describe("engine", () => {
+describe("pure audit api", () => {
   it("runs default rules and returns diagnostics with timings", async () => {
-    const engine = createEngine(defaultRules);
-    const result = await engine.run({
-      kind: "html",
-      source: { path: "index.html", language: "html" },
-      html: `
+    const result = await audit(
+      `
         <main>
           <h1>Page</h1>
           <h1>Other</h1>
@@ -20,7 +22,8 @@ describe("engine", () => {
           <input id="email" />
         </main>
       `,
-    });
+      { rules: defaultRules, filepath: "index.html" },
+    );
 
     expect(result.diagnostics.length).toBeGreaterThan(0);
     expect(Object.keys(result.metadata.ruleTimingsMs).length).toBe(
@@ -29,76 +32,130 @@ describe("engine", () => {
     expect(result.metadata.durationMs).toBeGreaterThanOrEqual(0);
   });
 
-  it("registers and unregisters rules deterministically by id", () => {
-    const a: RuleDefinition = {
-      meta: {
-        id: "zeta",
-        description: "z",
-        category: "structure",
-        defaultSeverity: "warn",
-      },
-      check: () => [],
-    };
-    const b: RuleDefinition = {
-      meta: {
-        id: "alpha",
-        description: "a",
-        category: "structure",
-        defaultSeverity: "warn",
-      },
-      check: () => [],
-    };
-
-    const engine = createEngine([a]);
-    engine.registerRule(b);
-    expect(engine.listRules().map((rule) => rule.meta.id)).toEqual([
-      "alpha",
-      "zeta",
-    ]);
-    engine.unregisterRule("alpha");
-    expect(engine.listRules().map((rule) => rule.meta.id)).toEqual(["zeta"]);
-  });
-
-  it("supports runIncremental and cache hits", async () => {
-    const engine = createEngine(defaultRules);
+  it("supports auditIncremental", async () => {
     const request = {
       changes: [
         {
-          kind: "html" as const,
-          source: { path: "a.html" },
-          html: "<h1>Only title</h1>",
+          content: "<h1>Only title</h1>",
+          filepath: "a.html",
         },
         {
-          kind: "html" as const,
-          source: { path: "b.html" },
-          html: "<img src='/x.png' />",
+          content: "<img src='/x.png' />",
+          filepath: "b.html",
         },
       ],
     };
-    const results = await engine.runIncremental(request);
-    const results2 = await engine.runIncremental(request);
+    const results = await auditIncremental(request, { rules: defaultRules });
+    const results2 = await auditIncremental(request, { rules: defaultRules });
     expect(results).toHaveLength(2);
-    expect(results2[0]?.metadata.cacheHit).toBe(true);
+    expect(results2[0]?.metadata.cacheHit).toBe(false);
   });
 
   it("supports audit session lifecycle and telemetry", async () => {
     const events: string[] = [];
-    const engine = createEngine(defaultRules, {
+    const session = startAuditSession({
+      rules: defaultRules,
       apiVersion: BETTERA11Y_API_VERSION,
-    });
-    const session = engine.createAuditSession({
-      emit: (event) => events.push(event.type),
+      telemetry: {
+        emit: (event) => events.push(event.type),
+      },
     });
 
     await session.start();
-    const result = await session.run({
-      kind: "html",
-      source: { path: "page.html" },
-      html: "<button></button>",
+    const result = await session.audit({
+      content: "<button></button>",
+      source: { kind: "file", path: "page.html" },
     });
     await session.stop();
 
     expect(result.diagnostics.length).toBeGreaterThan(0);
     expect(events).toEqual(["session-start", "audit-run", "session-stop"]);
+  });
+
+  it("returns deterministic system diagnostics for malformed input", async () => {
+    const result = await audit(
+      {
+        content: "",
+      },
+      { rules: defaultRules },
+    );
+    expect(result.diagnostics[0]?.category).toBe("system");
+    expect(result.diagnostics[0]?.message).toContain("Invalid audit input");
+  });
+
+  it("isolates per-rule failures without crashing full audit", async () => {
+    const brokenRule: RuleDefinition = {
+      meta: {
+        id: "broken-rule",
+        description: "throws",
+        category: "system",
+        defaultSeverity: "error",
+      },
+      check: () => {
+        throw new Error("boom");
+      },
+    };
+    const result = await audit(
+      "<main></main>",
+      { rules: [brokenRule], filepath: "broken.html" },
+    );
+    expect(
+      result.diagnostics.some((item) => item.ruleId === "broken-rule"),
+    ).toBe(true);
+  });
+
+  it("supports sync API and check helpers", async () => {
+    const syncResult = auditSync("<main><img src='/missing.png' /></main>", {
+      rules: defaultRules,
+      filepath: "sync.html",
+    });
+    expect(syncResult.diagnostics.length).toBeGreaterThan(0);
+
+    await expect(
+      check("<main><img src='/missing.png' /></main>", {
+        rules: defaultRules,
+        filepath: "check.html",
+      }),
+    ).resolves.toBe(false);
+
+    expect(
+      checkSync(
+        "<html lang='en'><main><button aria-label='Save'></button></main></html>",
+        {
+        rules: defaultRules,
+        filepath: "check-ok.html",
+        },
+      ),
+    ).toBe(true);
+  });
+
+  it("infers format from filepath and supports jsx/markdown inputs", async () => {
+    const jsxResult = await audit("<button><svg></svg></button>", {
+      rules: defaultRules,
+      filepath: "component.jsx",
+    });
+    expect(
+      jsxResult.diagnostics.some((item) => item.ruleId === "button-accessible-name"),
+    ).toBe(true);
+
+    const markdownResult = await audit("# Page heading", {
+      rules: defaultRules,
+      filepath: "README.md",
+      source: { kind: "inline", label: "md-snippet" },
+    });
+    expect(Array.isArray(markdownResult.diagnostics)).toBe(true);
+  });
+
+  it("supports custom normalizer overrides", async () => {
+    const result = await audit("ignored", {
+      rules: defaultRules,
+      format: "text",
+      normalizers: {
+        text: () => "<main><img src='/missing.png' /></main>",
+      },
+    });
+    expect(result.diagnostics.some((item) => item.ruleId === "image-alt")).toBe(
+      true,
+    );
   });
 });

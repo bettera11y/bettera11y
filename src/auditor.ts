@@ -1,0 +1,606 @@
+import {
+  defaultRuntimeAdapter,
+  type Normalizer,
+  type RuntimeAdapter,
+} from "./dom";
+import type {
+  AuditDiagnostic,
+  AuditInput,
+  AuditInputNormalizationOptions,
+  AuditSourceKind,
+  NormalizedAuditInput,
+  AuditResult,
+  AuditSession,
+  AuditorConfig,
+  IncrementalAuditRequest,
+  RuleDefinition,
+  SessionTelemetry,
+} from "./contracts";
+import {
+  BETTERA11Y_API_VERSION,
+  normalizeAuditInput,
+  validateAuditInput,
+} from "./contracts";
+import {
+  createDiagnosticFingerprint,
+  getSha256,
+  selectorToSourceLocation,
+} from "./utils";
+
+interface CacheEntry {
+  result: AuditResult;
+  createdAt: number;
+}
+
+export interface AuditFunctionOptions extends AuditorConfig {
+  rules?: RuleDefinition[];
+  runtimeAdapter?: RuntimeAdapter;
+  normalizers?: Partial<Record<NormalizedAuditInput["format"], Normalizer>>;
+  format?: NormalizedAuditInput["format"];
+  filepath?: string;
+  source?: {
+    kind?: AuditSourceKind;
+    path?: string;
+    label?: string;
+    language?: string;
+    framework?: string;
+    contentHash?: string;
+  };
+  id?: string;
+  telemetry?: SessionTelemetry;
+}
+
+interface InternalAuditor {
+  registerRule: (rule: RuleDefinition) => void;
+  unregisterRule: (ruleId: string) => void;
+  listRules: () => RuleDefinition[];
+  audit: (
+    input: AuditInput,
+    options?: AuditInputNormalizationOptions,
+    signal?: AbortSignal,
+  ) => Promise<AuditResult>;
+  auditSync: (
+    input: AuditInput,
+    options?: AuditInputNormalizationOptions,
+  ) => AuditResult;
+  check: (
+    input: AuditInput,
+    options?: AuditInputNormalizationOptions,
+    signal?: AbortSignal,
+  ) => Promise<boolean>;
+  checkSync: (
+    input: AuditInput,
+    options?: AuditInputNormalizationOptions,
+  ) => boolean;
+  auditIncremental: (
+    request: IncrementalAuditRequest,
+    options?: AuditInputNormalizationOptions,
+    signal?: AbortSignal,
+  ) => Promise<AuditResult[]>;
+  startAuditSession: (telemetry?: SessionTelemetry) => AuditSession;
+  clearCache: () => void;
+}
+
+function buildAuditor(
+  initialRules: RuleDefinition[] = [],
+  config: AuditFunctionOptions = {},
+  runtimeAdapter: RuntimeAdapter = defaultRuntimeAdapter,
+): InternalAuditor {
+  const ruleMap = new Map<string, RuleDefinition>();
+  const cache = new Map<string, CacheEntry>();
+  const maxEntries = config.cache?.maxEntries ?? 200;
+  const ttlMs = config.cache?.ttlMs ?? 5 * 60 * 1000;
+
+  initialRules.forEach((rule) => {
+    ruleMap.set(rule.meta.id, rule);
+  });
+
+  const clearExpiredCache = (): void => {
+    const now = Date.now();
+    for (const [key, entry] of cache.entries()) {
+      if (now - entry.createdAt > ttlMs) {
+        cache.delete(key);
+      }
+    }
+    while (cache.size > maxEntries) {
+      const oldestKey = cache.keys().next().value as string | undefined;
+      if (!oldestKey) break;
+      cache.delete(oldestKey);
+    }
+  };
+
+  const listRules = (): RuleDefinition[] =>
+    Array.from(ruleMap.values()).sort((a, b) =>
+      a.meta.id.localeCompare(b.meta.id),
+    );
+
+  const createSystemDiagnostic = (
+    message: string,
+    ruleId = "__system__",
+  ): AuditDiagnostic => ({
+    id: createDiagnosticFingerprint({
+      ruleId,
+      message,
+      severity: "error",
+      category: "system",
+    }),
+    ruleId,
+    message,
+    severity: "error",
+    category: "system",
+  });
+
+  const createInvalidInputResult = (
+    input: NormalizedAuditInput,
+    messages: string[],
+    start: number,
+  ): AuditResult => ({
+    diagnostics: messages.map((msg) =>
+      createSystemDiagnostic(`Invalid audit input: ${msg}`),
+    ),
+    metadata: {
+      inputId: input.id,
+      sourcePath: input.filepath ?? input.source?.path,
+      cacheHit: false,
+      durationMs: Number((performance.now() - start).toFixed(3)),
+      ruleTimingsMs: {},
+    },
+  });
+
+  const runRulesSync = (
+    normalizedInput: NormalizedAuditInput,
+    html: string,
+    document: Document | null,
+    signal?: AbortSignal,
+  ): { diagnostics: AuditDiagnostic[]; ruleTimingsMs: Record<string, number> } => {
+    const diagnostics: AuditDiagnostic[] = [];
+    const ruleTimingsMs: Record<string, number> = {};
+    const rules = listRules().filter(
+      (rule) => config.enabledRules?.[rule.meta.id] !== false,
+    );
+
+    for (const rule of rules) {
+      if (signal?.aborted) {
+        throw new Error("Audit cancelled.");
+      }
+      const ruleStart = performance.now();
+      const ruleOptions = config.ruleOptions?.[rule.meta.id] ?? {};
+      let emitted: Awaited<ReturnType<RuleDefinition["check"]>> = [];
+      try {
+        const maybeResult = rule.check({
+          document,
+          input: normalizedInput,
+          createSelector: runtimeAdapter.createSelector,
+          locate(element) {
+            const selector = runtimeAdapter.createSelector(element);
+            return runtimeAdapter.locateElement(
+              html,
+              element,
+              selector,
+              normalizedInput.filepath ?? normalizedInput.source?.path,
+            );
+          },
+          signal,
+          options: ruleOptions,
+        });
+        if (maybeResult instanceof Promise) {
+          throw new Error(
+            `Rule "${rule.meta.id}" is async and cannot run in auditSync.`,
+          );
+        }
+        emitted = maybeResult;
+      } catch (error) {
+        diagnostics.push(
+          createSystemDiagnostic(
+            `Rule "${rule.meta.id}" failed during audit: ${
+              error instanceof Error ? error.message : String(error)
+            }`,
+            rule.meta.id,
+          ),
+        );
+      }
+
+      ruleTimingsMs[rule.meta.id] = Number(
+        (performance.now() - ruleStart).toFixed(3),
+      );
+
+      for (const item of emitted) {
+        const severity =
+          config.severityOverrides?.[rule.meta.id] ??
+          item.severity ??
+          rule.meta.defaultSeverity;
+        const normalized = {
+          ...item,
+          severity,
+          category: item.category ?? rule.meta.category,
+          location:
+            item.location ??
+            selectorToSourceLocation(
+              html,
+              undefined,
+              normalizedInput.filepath ?? normalizedInput.source?.path,
+            ),
+          metadata: {
+            docsUrl: rule.meta.docsUrl,
+            tags: rule.meta.tags,
+            ...item.metadata,
+          },
+        };
+        diagnostics.push({
+          ...normalized,
+          id: createDiagnosticFingerprint(normalized),
+        });
+      }
+    }
+
+    return { diagnostics, ruleTimingsMs };
+  };
+
+  const auditSync = (
+    input: AuditInput,
+    inputOptions: AuditInputNormalizationOptions = {},
+  ): AuditResult => {
+    clearExpiredCache();
+    const start = performance.now();
+    const normalizedInput = normalizeAuditInput(input, inputOptions);
+    const inputErrors = validateAuditInput(normalizedInput);
+    if (inputErrors.length > 0) {
+      return createInvalidInputResult(normalizedInput, inputErrors, start);
+    }
+
+    const html = runtimeAdapter.toHtml(normalizedInput, config.normalizers);
+    if (!html) {
+      return {
+        diagnostics: [
+          createSystemDiagnostic("Audit input could not be normalized to HTML."),
+        ],
+        metadata: {
+          inputId: normalizedInput.id,
+          sourcePath: normalizedInput.filepath ?? normalizedInput.source?.path,
+          cacheHit: false,
+          durationMs: Number((performance.now() - start).toFixed(3)),
+          ruleTimingsMs: {},
+        },
+      };
+    }
+
+    const rules = listRules().filter(
+      (rule) => config.enabledRules?.[rule.meta.id] !== false,
+    );
+    const cacheKey = getSha256(
+      `${config.apiVersion ?? BETTERA11Y_API_VERSION}:${normalizedInput.source?.contentHash ?? getSha256(html)}:${rules
+        .map(
+          (rule) =>
+            `${rule.meta.id}:${config.severityOverrides?.[rule.meta.id] ?? "default"}:${JSON.stringify(config.ruleOptions?.[rule.meta.id] ?? {})}`,
+        )
+        .join("|")}`,
+    );
+    const cached = cache.get(cacheKey);
+    if (cached) {
+      return {
+        ...cached.result,
+        metadata: {
+          ...cached.result.metadata,
+          cacheHit: true,
+          durationMs: Number((performance.now() - start).toFixed(3)),
+        },
+      };
+    }
+
+    const document = runtimeAdapter.createDocument(html);
+    const { diagnostics, ruleTimingsMs } = runRulesSync(
+      normalizedInput,
+      html,
+      document,
+    );
+    const result: AuditResult = {
+      diagnostics,
+      metadata: {
+        inputId: normalizedInput.id,
+        sourcePath: normalizedInput.filepath ?? normalizedInput.source?.path,
+        cacheHit: false,
+        durationMs: Number((performance.now() - start).toFixed(3)),
+        ruleTimingsMs,
+      },
+    };
+    cache.set(cacheKey, { result, createdAt: Date.now() });
+    clearExpiredCache();
+    return result;
+  };
+
+  const audit = async (
+    input: AuditInput,
+    inputOptions: AuditInputNormalizationOptions = {},
+    signal?: AbortSignal,
+  ): Promise<AuditResult> => {
+    if (signal?.aborted) {
+      throw new Error("Audit cancelled before start.");
+    }
+
+    clearExpiredCache();
+    const start = performance.now();
+    const normalizedInput = normalizeAuditInput(input, inputOptions);
+    const inputErrors = validateAuditInput(normalizedInput);
+    if (inputErrors.length > 0) {
+      return createInvalidInputResult(normalizedInput, inputErrors, start);
+    }
+
+    const html = runtimeAdapter.toHtml(normalizedInput, config.normalizers);
+    if (!html) {
+      return {
+        diagnostics: [
+          createSystemDiagnostic(
+            "Audit input could not be normalized to HTML.",
+          ),
+        ],
+        metadata: {
+          inputId: normalizedInput.id,
+          sourcePath: normalizedInput.filepath ?? normalizedInput.source?.path,
+          cacheHit: false,
+          durationMs: Number((performance.now() - start).toFixed(3)),
+          ruleTimingsMs: {},
+        },
+      };
+    }
+
+    const rules = listRules().filter(
+      (rule) => config.enabledRules?.[rule.meta.id] !== false,
+    );
+    const cacheKey = getSha256(
+      `${config.apiVersion ?? BETTERA11Y_API_VERSION}:${normalizedInput.source?.contentHash ?? getSha256(html)}:${rules
+        .map(
+          (rule) =>
+            `${rule.meta.id}:${config.severityOverrides?.[rule.meta.id] ?? "default"}:${JSON.stringify(config.ruleOptions?.[rule.meta.id] ?? {})}`,
+        )
+        .join("|")}`,
+    );
+    const cached = cache.get(cacheKey);
+    if (cached) {
+      return {
+        ...cached.result,
+        metadata: {
+          ...cached.result.metadata,
+          cacheHit: true,
+          durationMs: Number((performance.now() - start).toFixed(3)),
+        },
+      };
+    }
+
+    const document = runtimeAdapter.createDocument(html);
+    const diagnostics: AuditDiagnostic[] = [];
+    const ruleTimingsMs: Record<string, number> = {};
+
+    for (const rule of rules) {
+      if (signal?.aborted) {
+        throw new Error("Audit cancelled.");
+      }
+      const ruleStart = performance.now();
+      const ruleOptions = config.ruleOptions?.[rule.meta.id] ?? {};
+      let emitted: Awaited<ReturnType<RuleDefinition["check"]>> = [];
+      try {
+        emitted = await rule.check({
+          document,
+          input: normalizedInput,
+          createSelector: runtimeAdapter.createSelector,
+          locate(element) {
+            const selector = runtimeAdapter.createSelector(element);
+            return runtimeAdapter.locateElement(
+              html,
+              element,
+              selector,
+              normalizedInput.filepath ?? normalizedInput.source?.path,
+            );
+          },
+          signal,
+          options: ruleOptions,
+        });
+      } catch (error) {
+        diagnostics.push(
+          createSystemDiagnostic(
+            `Rule "${rule.meta.id}" failed during audit: ${
+              error instanceof Error ? error.message : String(error)
+            }`,
+            rule.meta.id,
+          ),
+        );
+      }
+
+      ruleTimingsMs[rule.meta.id] = Number(
+        (performance.now() - ruleStart).toFixed(3),
+      );
+
+      for (const item of emitted) {
+        const severity =
+          config.severityOverrides?.[rule.meta.id] ??
+          item.severity ??
+          rule.meta.defaultSeverity;
+        const normalized = {
+          ...item,
+          severity,
+          category: item.category ?? rule.meta.category,
+          location:
+            item.location ??
+            selectorToSourceLocation(
+              html,
+              undefined,
+              normalizedInput.filepath ?? normalizedInput.source?.path,
+            ),
+          metadata: {
+            docsUrl: rule.meta.docsUrl,
+            tags: rule.meta.tags,
+            ...item.metadata,
+          },
+        };
+        diagnostics.push({
+          ...normalized,
+          id: createDiagnosticFingerprint(normalized),
+        });
+      }
+    }
+
+    const result: AuditResult = {
+      diagnostics,
+      metadata: {
+        inputId: normalizedInput.id,
+        sourcePath: normalizedInput.filepath ?? normalizedInput.source?.path,
+        cacheHit: false,
+        durationMs: Number((performance.now() - start).toFixed(3)),
+        ruleTimingsMs,
+      },
+    };
+    cache.set(cacheKey, { result, createdAt: Date.now() });
+    clearExpiredCache();
+    return result;
+  };
+
+  const check = async (
+    input: AuditInput,
+    options: AuditInputNormalizationOptions = {},
+    signal?: AbortSignal,
+  ): Promise<boolean> => {
+    const result = await audit(input, options, signal);
+    return result.diagnostics.length === 0;
+  };
+
+  const checkSync = (
+    input: AuditInput,
+    options: AuditInputNormalizationOptions = {},
+  ): boolean => auditSync(input, options).diagnostics.length === 0;
+
+  const auditIncremental = async (
+    request: IncrementalAuditRequest,
+    options: AuditInputNormalizationOptions = {},
+    signal?: AbortSignal,
+  ): Promise<AuditResult[]> => {
+    const output: AuditResult[] = [];
+    for (const change of request.changes) {
+      output.push(await audit(change, options, signal));
+    }
+    return output;
+  };
+
+  return {
+    registerRule(rule) {
+      ruleMap.set(rule.meta.id, rule);
+    },
+    unregisterRule(ruleId) {
+      ruleMap.delete(ruleId);
+    },
+    listRules,
+    audit,
+    auditSync,
+    check,
+    checkSync,
+    auditIncremental,
+    startAuditSession(telemetry) {
+      let started = false;
+      return {
+        async start() {
+          started = true;
+          telemetry?.emit({ type: "session-start" });
+        },
+        async stop() {
+          started = false;
+          telemetry?.emit({ type: "session-stop" });
+        },
+        async audit(input, signal) {
+          if (!started) {
+            throw new Error("Audit session must be started before audit.");
+          }
+          const result = await audit(input, {}, signal);
+          telemetry?.emit({
+            type: "audit-run",
+            durationMs: result.metadata.durationMs,
+            cacheHit: result.metadata.cacheHit,
+          });
+          return result;
+        },
+        async auditIncremental(request, signal) {
+          if (!started) {
+            throw new Error(
+              "Audit session must be started before auditIncremental.",
+            );
+          }
+          return auditIncremental(request, {}, signal);
+        },
+      };
+    },
+    clearCache() {
+      cache.clear();
+    },
+  };
+}
+
+export async function audit(
+  input: AuditInput,
+  options: AuditFunctionOptions = {},
+  signal?: AbortSignal,
+): Promise<AuditResult> {
+  const auditor = buildAuditor(
+    options.rules ?? [],
+    options,
+    options.runtimeAdapter ?? defaultRuntimeAdapter,
+  );
+  return auditor.audit(input, options, signal);
+}
+
+export function auditSync(
+  input: AuditInput,
+  options: AuditFunctionOptions = {},
+): AuditResult {
+  const auditor = buildAuditor(
+    options.rules ?? [],
+    options,
+    options.runtimeAdapter ?? defaultRuntimeAdapter,
+  );
+  return auditor.auditSync(input, options);
+}
+
+export async function check(
+  input: AuditInput,
+  options: AuditFunctionOptions = {},
+  signal?: AbortSignal,
+): Promise<boolean> {
+  const auditor = buildAuditor(
+    options.rules ?? [],
+    options,
+    options.runtimeAdapter ?? defaultRuntimeAdapter,
+  );
+  return auditor.check(input, options, signal);
+}
+
+export function checkSync(
+  input: AuditInput,
+  options: AuditFunctionOptions = {},
+): boolean {
+  const auditor = buildAuditor(
+    options.rules ?? [],
+    options,
+    options.runtimeAdapter ?? defaultRuntimeAdapter,
+  );
+  return auditor.checkSync(input, options);
+}
+
+export async function auditIncremental(
+  request: IncrementalAuditRequest,
+  options: AuditFunctionOptions = {},
+  signal?: AbortSignal,
+): Promise<AuditResult[]> {
+  const auditor = buildAuditor(
+    options.rules ?? [],
+    options,
+    options.runtimeAdapter ?? defaultRuntimeAdapter,
+  );
+  return auditor.auditIncremental(request, options, signal);
+}
+
+export function startAuditSession(
+  options: AuditFunctionOptions = {},
+): AuditSession {
+  const auditor = buildAuditor(
+    options.rules ?? [],
+    options,
+    options.runtimeAdapter ?? defaultRuntimeAdapter,
+  );
+  return auditor.startAuditSession(options.telemetry);
+}

@@ -12,6 +12,9 @@ env:
 jobs:
   validate:
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        node-version: [20, 22]
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -19,7 +22,7 @@ jobs:
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
-          node-version: 22
+          node-version: ${{ matrix.node-version }}
           cache: npm
 
       - name: Install dependencies
@@ -27,3 +30,6 @@ jobs:
 
       - name: Validate release quality gates
         run: npm run validate:release
+
+      - name: Smoke test package exports
+        run: npm run test:smoke:esm && npm run test:smoke:cjs

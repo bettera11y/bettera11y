@@ -4,10 +4,15 @@ import type { RuleEnabledMap, RuleSeverityOverrides } from "./rules";
 
 export const BETTERA11Y_API_VERSION = "1";
 
-export interface AuditEngineConfig {
+export interface AuditorConfig {
   apiVersion?: typeof BETTERA11Y_API_VERSION;
   severityOverrides?: RuleSeverityOverrides;
   enabledRules?: RuleEnabledMap;
+  ruleOptions?: Record<string, Record<string, boolean | number | string>>;
+  cache?: {
+    maxEntries?: number;
+    ttlMs?: number;
+  };
 }
 
 export interface IncrementalAuditRequest {
@@ -32,11 +37,11 @@ export interface SessionTelemetry {
   emit: (event: SessionTelemetryEvent) => void;
 }
 
-export interface WatchSessionContract {
+export interface AuditSession {
   start: () => Promise<void>;
   stop: () => Promise<void>;
-  run: (input: AuditInput, signal?: AbortSignal) => Promise<AuditResult>;
-  runIncremental: (
+  audit: (input: AuditInput, signal?: AbortSignal) => Promise<AuditResult>;
+  auditIncremental: (
     request: IncrementalAuditRequest,
     signal?: AbortSignal,
   ) => Promise<AuditResult[]>;

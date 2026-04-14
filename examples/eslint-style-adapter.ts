@@ -1,8 +1,7 @@
 import {
-  createEngine,
+  audit,
   recommendedPreset,
-  translateSeverity,
-  type AuditInput,
+  toAdapterDiagnostic,
 } from "../src";
 
 type EslintMessage = {
@@ -19,26 +18,28 @@ export async function lintHtmlLikeSource(
   filePath: string,
   sourceText: string,
 ): Promise<EslintMessage[]> {
-  const engine = createEngine(recommendedPreset);
-  const input: AuditInput = {
-    kind: "virtual-file",
+  const result = await audit(sourceText, {
+    rules: recommendedPreset,
+    filepath: filePath,
+    format: "tsx",
     source: {
+      kind: "file",
       path: filePath,
       language: "tsx",
       framework: "react",
     },
-    content: sourceText,
-  };
+  });
 
-  const result = await engine.run(input);
-
-  return result.diagnostics.map((diagnostic) => ({
-    ruleId: `bettera11y/${diagnostic.ruleId}`,
-    message: diagnostic.message,
-    severity: Number(translateSeverity(diagnostic.severity, "eslint")),
-    line: diagnostic.location?.start?.line ?? 1,
-    column: diagnostic.location?.start?.column ?? 1,
-    endLine: diagnostic.location?.end?.line,
-    endColumn: diagnostic.location?.end?.column,
-  }));
+  return result.diagnostics.map((diagnostic) => {
+    const mapped = toAdapterDiagnostic(diagnostic, "eslint");
+    return {
+      ruleId: `bettera11y/${diagnostic.ruleId}`,
+      message: diagnostic.message,
+      severity: Number(mapped.level),
+      line: diagnostic.location?.start?.line ?? 1,
+      column: diagnostic.location?.start?.column ?? 1,
+      endLine: diagnostic.location?.end?.line,
+      endColumn: diagnostic.location?.end?.column,
+    };
+  });
 }

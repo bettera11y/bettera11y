@@ -1,12 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { createEngine, defaultRules } from "../src";
+import { audit, defaultRules } from "../src";
 
 describe("diagnostics snapshots", () => {
   it("keeps diagnostics shape and remediation stable", async () => {
-    const result = await createEngine(defaultRules).run({
-      kind: "html",
-      source: { path: "snapshot.html" },
-      html: `
+    const result = await audit(
+      `
         <html>
         <main>
           <h1>Page</h1>
@@ -21,7 +19,8 @@ describe("diagnostics snapshots", () => {
         </main>
         </html>
       `,
-    });
+      { rules: defaultRules, filepath: "snapshot.html" },
+    );
 
     expect(result.diagnostics).toMatchSnapshot();
   });

@@ -1,5 +1,12 @@
-export { createEngine } from "./engine";
-export type { AuditEngine } from "./engine";
+export {
+  audit,
+  auditIncremental,
+  auditSync,
+  check,
+  checkSync,
+  startAuditSession,
+} from "./auditor";
+export type { AuditFunctionOptions } from "./auditor";
 export {
   createJsonReporter,
   createMachineReporter,

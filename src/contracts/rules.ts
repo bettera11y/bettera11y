@@ -36,6 +36,7 @@ export interface RuleContext {
   createSelector: (element: Element) => string;
   locate: (element: Element) => DiagnosticLocation;
   signal?: AbortSignal;
+  options?: Record<string, boolean | number | string>;
 }
 
 export type RuleDiagnostic = Omit<AuditDiagnostic, "id">;

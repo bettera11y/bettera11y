@@ -1,4 +1,13 @@
 import type { DiagnosticLocation, Position, Severity } from "../contracts";
+import type { AuditDiagnostic } from "../contracts";
+
+export interface AdapterDiagnostic {
+  id: string;
+  ruleId: string;
+  message: string;
+  level: string | number;
+  location?: DiagnosticLocation;
+}
 
 export function positionFromOffset(source: string, offset: number): Position {
   const safeOffset = Math.max(0, Math.min(offset, source.length));
@@ -79,4 +88,17 @@ export function translateSeverity(
   }
 
   return severity.toUpperCase();
+}
+
+export function toAdapterDiagnostic(
+  diagnostic: AuditDiagnostic,
+  target: "eslint" | "vite" | "terminal",
+): AdapterDiagnostic {
+  return {
+    id: diagnostic.id,
+    ruleId: diagnostic.ruleId,
+    message: diagnostic.message,
+    level: translateSeverity(diagnostic.severity, target),
+    location: diagnostic.location,
+  };
 }

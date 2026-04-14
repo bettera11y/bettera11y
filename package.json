@@ -30,10 +30,15 @@
     "format:check": "prettier --check .",
     "test": "vitest run",
     "test:performance": "vitest run tests/performance",
+    "test:smoke:esm": "node --input-type=module -e \"import('./dist/index.js').then((m)=>{ if (!m.audit) throw new Error('Missing audit export'); if (!m.auditIncremental) throw new Error('Missing auditIncremental export'); if (!m.startAuditSession) throw new Error('Missing startAuditSession export'); })\"",
+    "test:smoke:cjs": "node -e \"const m=require('./dist/index.cjs'); if (!m.audit) throw new Error('Missing audit export'); if (!m.auditIncremental) throw new Error('Missing auditIncremental export'); if (!m.startAuditSession) throw new Error('Missing startAuditSession export');\"",
     "validate:release": "npm run format:check && npm run typecheck && npm run test && npm run build"
   },
   "dependencies": {
-    "jsdom": "^25.0.1"
+    "@babel/parser": "^7.29.2",
+    "@babel/traverse": "^7.29.0",
+    "jsdom": "^25.0.1",
+    "marked": "^18.0.0"
   },
   "devDependencies": {
     "@commitlint/cli": "^19.8.0",
