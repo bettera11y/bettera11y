@@ -5,6 +5,14 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.1](https://github.com/bettera11y/bettera11y/compare/v0.2.0...v0.2.1) (2026-04-14)
+
+
+### Bug Fixes
+
+* **ci:** stabilize release validation and npm publish automation ([57f7712](https://github.com/bettera11y/bettera11y/commit/57f771292479ea4b8bcb3abd45c68c431a32ec45))
+* **ci:** switch release workflow to release-please CLI ([a07abfb](https://github.com/bettera11y/bettera11y/commit/a07abfbbe8aa4d7e3a81e4216c0735c08e2e4277))
+
 ## [0.2.0](https://github.com/bettera11y/bettera11y/compare/v0.1.0...v0.2.0) (2026-04-14)
 
 
