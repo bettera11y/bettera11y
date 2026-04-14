@@ -34,3 +34,13 @@ export const myRule: RuleDefinition = {
 
 Define `meta.optionsSchema` to document and validate configurable rule behavior.
 Integrations can surface these options in their own config UX.
+
+Example for style auditing options:
+
+```ts
+optionsSchema: {
+    minContrastNormal: { type: "number", defaultValue: 4.5 },
+    minContrastLarge: { type: "number", defaultValue: 3 },
+    minFontSizePx: { type: "number", defaultValue: 12 }
+}
+```

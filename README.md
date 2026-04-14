@@ -8,6 +8,9 @@ Use it to run accessibility audits, apply rule presets, and return normalized
 diagnostics that can be consumed by separate tooling packages (ESLint, Vite,
 Next.js, browser extensions, and custom integrations).
 
+Style auditing is included for inline HTML/JSX styles and raw CSS inputs, with
+contrast/readability checks and configurable thresholds.
+
 ## Install
 
 ```bash
@@ -30,8 +33,18 @@ const isClean = await check("# Heading", {
     source: { kind: "inline", label: "Quick note" }
 });
 
+const cssAudit = await audit(":root{--fg:#777;--bg:#888}.title{color:var(--fg);background:var(--bg)}", {
+    format: "css",
+    filepath: "styles.css",
+    rules: recommendedPreset,
+    ruleOptions: {
+        "color-contrast": { minContrastNormal: 4.5, minContrastLarge: 3 }
+    }
+});
+
 console.log(result.diagnostics);
 console.log(isClean);
+console.log(cssAudit.diagnostics);
 ```
 
 ## What You Get
@@ -39,6 +52,7 @@ console.log(isClean);
 - **Core runtime**: run one-shot or incremental audits.
 - **Rule presets**: `recommendedPreset`, `strictPreset`, and `wcagAaBaselinePreset`.
 - **Diagnostics utilities**: stable IDs, source location helpers, and severity mapping.
+- **Style auditing**: contrast/readability checks for inline styles and CSS text/files.
 - **Reporting helpers**: pretty, JSON, and machine-oriented output formats.
 - **Adapter primitives**: utilities for building integrations in other packages.
 

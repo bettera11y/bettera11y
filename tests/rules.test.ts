@@ -57,4 +57,22 @@ describe("default rules", () => {
             false
         );
     });
+
+    it("flags inline style contrast issues", async () => {
+        expect(
+            hasRule(await run("<p style='color:#777;background-color:#888'>Low contrast</p>"), "color-contrast")
+        ).toBe(true);
+        expect(
+            hasRule(await run("<p style='color:#111;background-color:#fff'>Readable contrast</p>"), "color-contrast")
+        ).toBe(false);
+    });
+
+    it("flags contrast issues for raw css input", async () => {
+        const result = await audit(":root{--fg:#777;--bg:#888}.body{color:var(--fg);background-color:var(--bg)}", {
+            rules: defaultRules,
+            format: "css",
+            filepath: "styles.css"
+        });
+        expect(result.diagnostics.some((item) => item.ruleId === "color-contrast")).toBe(true);
+    });
 });

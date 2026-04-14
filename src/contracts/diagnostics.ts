@@ -8,6 +8,7 @@ export type DiagnosticCategory =
     | "media"
     | "landmarks"
     | "keyboard"
+    | "style"
     | "system";
 
 export interface Position {
@@ -28,6 +29,11 @@ export interface DiagnosticMetadata {
     tags?: string[];
     confidence?: number;
     fixable?: boolean;
+    contrastRatio?: number;
+    contrastThreshold?: number;
+    foregroundColor?: string;
+    backgroundColor?: string;
+    sourceType?: "inline-style" | "css-rule";
 }
 
 export interface AuditDiagnostic {

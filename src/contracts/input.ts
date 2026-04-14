@@ -1,4 +1,4 @@
-export type AuditFormat = "html" | "markdown" | "jsx" | "tsx" | "text";
+export type AuditFormat = "html" | "markdown" | "jsx" | "tsx" | "text" | "css";
 export type AuditSourceKind = "file" | "inline" | "virtual";
 
 export interface SourceDescriptor {
@@ -43,7 +43,10 @@ const extensionToFormat = new Map<string, AuditFormat>([
     [".mdx", "markdown"],
     [".jsx", "jsx"],
     [".tsx", "tsx"],
-    [".txt", "text"]
+    [".txt", "text"],
+    [".css", "css"],
+    [".scss", "css"],
+    [".sass", "css"]
 ]);
 
 export function inferFormatFromFilepath(filepath?: string): AuditFormat | undefined {
@@ -94,8 +97,8 @@ export function validateAuditInput(input: NormalizedAuditInput): string[] {
         errors.push("Audit input must include a non-empty content string.");
     }
 
-    if (!["html", "markdown", "jsx", "tsx", "text"].includes(input.format)) {
-        errors.push("Audit input format must be one of: html, markdown, jsx, tsx, text.");
+    if (!["html", "markdown", "jsx", "tsx", "text", "css"].includes(input.format)) {
+        errors.push("Audit input format must be one of: html, markdown, jsx, tsx, text, css.");
     }
 
     if (typeof input.source !== "undefined") {

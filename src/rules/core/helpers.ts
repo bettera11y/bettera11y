@@ -15,7 +15,7 @@ export function createSimpleDiagnostic(
     ruleId: string,
     message: string,
     severity: "info" | "warn" | "error",
-    category: "semantics" | "structure" | "aria" | "forms" | "media" | "landmarks" | "keyboard",
+    category: "semantics" | "structure" | "aria" | "forms" | "media" | "landmarks" | "keyboard" | "style",
     remediation: string,
     location?: ReturnType<import("../../contracts").RuleContext["locate"]>
 ) {

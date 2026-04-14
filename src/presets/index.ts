@@ -13,7 +13,9 @@ export const recommendedPreset: RuleDefinition[] = byId([
     "form-control-label",
     "button-accessible-name",
     "invalid-aria",
-    "main-landmark"
+    "main-landmark",
+    "color-contrast",
+    "text-readability"
 ]);
 
 export const strictPreset: RuleDefinition[] = [...coreRules];
@@ -27,5 +29,6 @@ export const wcagAaBaselinePreset: RuleDefinition[] = byId([
     "button-accessible-name",
     "invalid-aria",
     "main-landmark",
-    "positive-tabindex"
+    "positive-tabindex",
+    "color-contrast"
 ]);

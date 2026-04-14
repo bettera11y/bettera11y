@@ -11,6 +11,8 @@ import type {
     JSXSpreadAttribute,
     JSXText,
     JSXExpressionContainer,
+    ObjectExpression,
+    ObjectProperty,
     Node,
     Program
 } from "@babel/types";
@@ -74,9 +76,42 @@ function serializeJsxAttribute(attribute: JSXAttribute | JSXSpreadAttribute): st
         if (expression.type === "BooleanLiteral") {
             return expression.value ? mappedName : "";
         }
+        if (mappedName === "style" && expression.type === "ObjectExpression") {
+            const styleValue = serializeStyleObjectExpression(expression);
+            return styleValue ? `style="${escapeHtml(styleValue)}"` : "";
+        }
     }
 
     return "";
+}
+
+function serializeStyleObjectExpression(expression: ObjectExpression): string {
+    const declarations: string[] = [];
+    for (const property of expression.properties) {
+        if (property.type !== "ObjectProperty") {
+            continue;
+        }
+        const key = extractObjectPropertyKey(property);
+        if (!key) {
+            continue;
+        }
+        const cssProperty = key.replace(/[A-Z]/g, (char) => `-${char.toLowerCase()}`);
+        const value = property.value;
+        if (value.type === "StringLiteral" || value.type === "NumericLiteral") {
+            declarations.push(`${cssProperty}:${String(value.value)}`);
+        }
+    }
+    return declarations.join(";");
+}
+
+function extractObjectPropertyKey(property: ObjectProperty): string | null {
+    if (property.key.type === "Identifier") {
+        return property.key.name;
+    }
+    if (property.key.type === "StringLiteral") {
+        return property.key.value;
+    }
+    return null;
 }
 
 type JsxChildNode = JSXText | JSXExpressionContainer | JSXElement | JSXFragment | JSXSpreadChild;
@@ -196,13 +231,15 @@ export const tsxToHtml: Normalizer = (content) => {
 };
 
 export const textToHtml: Normalizer = (content) => `<pre>${escapeHtml(content)}</pre>`;
+export const cssToHtml: Normalizer = (content) => `<style>${content}</style>`;
 
 export const builtinNormalizers: Record<AuditFormat, Normalizer> = {
     html: (content) => content,
     markdown: markdownToHtml,
     jsx: jsxToHtml,
     tsx: tsxToHtml,
-    text: textToHtml
+    text: textToHtml,
+    css: cssToHtml
 };
 
 export function normalizeInputToHtml(

@@ -3,6 +3,7 @@ import { buttonAccessibleNameRule, formControlLabelRule, imageAltRule } from "./
 import { duplicateH1Rule, duplicateIdRule, headingOrderRule, htmlLangRule } from "./core/structure-rules";
 import { interactiveRoleNameRule, invalidAriaRule, positiveTabindexRule } from "./core/aria-keyboard-rules";
 import { mainLandmarkRule } from "./core/landmark-rules";
+import { colorContrastRule, textReadabilityRule } from "./core/style-rules";
 
 export const coreRules: RuleDefinition[] = [
     duplicateIdRule,
@@ -15,7 +16,9 @@ export const coreRules: RuleDefinition[] = [
     invalidAriaRule,
     interactiveRoleNameRule,
     positiveTabindexRule,
-    mainLandmarkRule
+    mainLandmarkRule,
+    colorContrastRule,
+    textReadabilityRule
 ];
 
 export const defaultRules = coreRules;

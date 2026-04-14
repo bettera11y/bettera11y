@@ -1,4 +1,4 @@
-import type { AuditInput } from "./input";
+import type { NormalizedAuditInput } from "./input";
 import type { AuditDiagnostic, DiagnosticCategory, DiagnosticLocation, Severity } from "./diagnostics";
 
 export interface RuleOptionSchemaEntry {
@@ -26,7 +26,7 @@ export interface RuleMeta {
 }
 
 export interface RuleContext {
-    input: AuditInput;
+    input: NormalizedAuditInput;
     document: Document | null;
     createSelector: (element: Element) => string;
     locate: (element: Element) => DiagnosticLocation;
