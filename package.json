@@ -1,6 +1,6 @@
 {
   "name": "bettera11y",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Core realtime accessibility audit engine for BetterA11y integrations.",
   "author": "Sebastian Inman",
   "license": "MIT",
