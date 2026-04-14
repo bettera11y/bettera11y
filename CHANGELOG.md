@@ -5,6 +5,13 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.1](https://github.com/bettera11y/bettera11y/compare/v0.4.0...v0.4.1) (2026-04-14)
+
+
+### Bug Fixes
+
+* improve TSX JSX extraction and skip main-landmark for non-page inputs ([fb150dc](https://github.com/bettera11y/bettera11y/commit/fb150dc30bf83f4ea0b8ec34b8bc1bb7c79fb66c))
+
 ## [0.4.0](https://github.com/bettera11y/bettera11y/compare/v0.3.1...v0.4.0) (2026-04-14)
 
 
