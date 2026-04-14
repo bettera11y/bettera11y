@@ -75,4 +75,43 @@ describe("default rules", () => {
         });
         expect(result.diagnostics.some((item) => item.ruleId === "color-contrast")).toBe(true);
     });
+
+    it("skips main-landmark for TSX component modules", async () => {
+        const result = await audit(
+            `export default function App() {
+        return (
+          <main><h1>Hi</h1></main>
+        );
+      }`,
+            {
+                filepath: "App.tsx",
+                format: "tsx",
+                rules: defaultRules
+            }
+        );
+        expect(result.diagnostics.some((d) => d.ruleId === "main-landmark")).toBe(false);
+    });
+
+    it("still applies main-landmark to HTML page documents", async () => {
+        const result = await audit("<html lang='en'><body><div>Body</div></body></html>", {
+            filepath: "page.html",
+            format: "html",
+            rules: defaultRules
+        });
+        expect(result.diagnostics.some((d) => d.ruleId === "main-landmark")).toBe(true);
+    });
+
+    it("flags missing img alt in TSX with parenthesized return", async () => {
+        const result = await audit(
+            `export default function App() {
+        return (
+          <main>
+            <img src="/x.png" />
+          </main>
+        );
+      }`,
+            { filepath: "App.tsx", format: "tsx", rules: defaultRules }
+        );
+        expect(result.diagnostics.some((d) => d.ruleId === "image-alt")).toBe(true);
+    });
 });

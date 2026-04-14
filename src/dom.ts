@@ -1,6 +1,7 @@
 import { JSDOM } from "jsdom";
 import { parse } from "@babel/parser";
 import type {
+    CallExpression,
     JSXAttribute,
     JSXElement,
     JSXFragment,
@@ -213,6 +214,46 @@ function serializeJsxElement(element: JSXElement): string {
 }
 
 /**
+ * Strips redundant parentheses from an expression (e.g. `return (<div />)`).
+ *
+ * @param node AST expression or statement node.
+ * @returns Inner expression after unwrapping.
+ */
+function unwrapParentheses(node: Node | null | undefined): Node | null | undefined {
+    if (!node) {
+        return node;
+    }
+    let current: Node = node;
+    while (current.type === "ParenthesizedExpression") {
+        current = current.expression;
+    }
+    return current;
+}
+
+/**
+ * Pushes JSX passed to `.render(...)` (React 18 root API) into the collector.
+ *
+ * @param call Parsed call expression.
+ * @param tryPushNode Nested visitor for JSX roots.
+ */
+function tryPushRenderCallArgument(call: CallExpression, tryPushNode: (node: Node | null | undefined) => void): void {
+    const callee = call.callee;
+    if (callee.type !== "MemberExpression" || callee.computed) {
+        return;
+    }
+    const prop = callee.property;
+    if (prop.type !== "Identifier" || prop.name !== "render") {
+        return;
+    }
+    const first = call.arguments[0];
+    if (!first || first.type === "SpreadElement") {
+        return;
+    }
+    const inner = unwrapParentheses(first);
+    tryPushNode(inner);
+}
+
+/**
  * Collects JSX output candidates from top-level program statements.
  *
  * @param program Parsed Babel program.
@@ -242,27 +283,48 @@ function collectProgramJsx(program: Program): string {
             return;
         }
 
-        if (
-            node.type === "ExpressionStatement" &&
-            (node.expression.type === "JSXElement" || node.expression.type === "JSXFragment")
-        ) {
-            tryPushNode(node.expression);
+        if (node.type === "ExpressionStatement") {
+            const expr = unwrapParentheses(node.expression);
+            if (!expr) {
+                return;
+            }
+            if (expr.type === "JSXElement" || expr.type === "JSXFragment") {
+                tryPushNode(expr);
+                return;
+            }
+            if (expr.type === "CallExpression") {
+                tryPushRenderCallArgument(expr, tryPushNode);
+            }
             return;
         }
 
-        if (
-            node.type === "ReturnStatement" &&
-            (node.argument?.type === "JSXElement" || node.argument?.type === "JSXFragment")
-        ) {
-            tryPushNode(node.argument);
+        if (node.type === "ReturnStatement") {
+            const argument = unwrapParentheses(node.argument);
+            if (argument?.type === "JSXElement" || argument?.type === "JSXFragment") {
+                tryPushNode(argument);
+            }
         }
     };
 
     for (const statement of program.body) {
         tryPushNode(statement);
-        if (statement.type === "ExportDefaultDeclaration" && statement.declaration.type === "FunctionDeclaration") {
-            for (const fnStatement of statement.declaration.body.body) {
-                tryPushNode(fnStatement);
+        if (statement.type === "ExportDefaultDeclaration") {
+            const decl = statement.declaration;
+            if (decl.type === "FunctionDeclaration" && decl.body?.body) {
+                for (const fnStatement of decl.body.body) {
+                    tryPushNode(fnStatement);
+                }
+            } else if (decl.type === "ArrowFunctionExpression") {
+                if (decl.body.type === "BlockStatement") {
+                    for (const fnStatement of decl.body.body) {
+                        tryPushNode(fnStatement);
+                    }
+                } else {
+                    const body = unwrapParentheses(decl.body);
+                    if (body?.type === "JSXElement" || body?.type === "JSXFragment") {
+                        tryPushNode(body);
+                    }
+                }
             }
         }
         if (statement.type === "FunctionDeclaration" && statement.id?.name && statement.body?.body) {

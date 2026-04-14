@@ -26,6 +26,28 @@ describe("built-in normalizers", () => {
         expect(html).toContain("Save");
     });
 
+    it("unwraps parenthesized JSX return values", () => {
+        const html = tsxToHtml(`export default function App() {
+      return (
+        <main>
+          <img src="/x.png" />
+        </main>
+      );
+    }`);
+        expect(html).toContain("<main>");
+        expect(html).toContain("<img");
+    });
+
+    it("extracts JSX passed to createRoot().render()", () => {
+        const html = tsxToHtml(`createRoot(root).render(
+  <div>
+    <img src="/x.png" alt="" />
+  </div>
+);`);
+        expect(html).toContain("<img");
+        expect(html).toContain('alt=""');
+    });
+
     it("supports custom normalizer overrides before built-ins", () => {
         const input: NormalizedAuditInput = {
             content: "ignored",

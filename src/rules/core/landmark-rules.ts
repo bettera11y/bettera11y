@@ -9,10 +9,14 @@ export const mainLandmarkRule: RuleDefinition = {
         tags: ["landmarks", "wcag-1.3.1", "heuristic"],
         wcagAlignment: "heuristic",
         wcagCriteria: ["1.3.1"],
-        wcagNotes: "Main-landmark count checks are structural heuristics and should be reviewed in page-context."
+        wcagNotes:
+            "Main-landmark count checks are structural heuristics and should be reviewed in page-context. Skipped for JSX, TSX, and CSS module audits where the DOM is not a full HTML document."
     },
-    check({ document, locate }) {
+    check({ document, locate, input }) {
         if (!document) return [];
+        if (input.format === "jsx" || input.format === "tsx" || input.format === "css") {
+            return [];
+        }
         const mains = Array.from(document.querySelectorAll("main, [role='main']"));
         if (mains.length === 1) return [];
         if (mains.length === 0) {
