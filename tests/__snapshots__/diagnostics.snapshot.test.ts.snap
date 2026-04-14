@@ -1,0 +1,265 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`diagnostics snapshots > keeps diagnostics shape and remediation stable 1`] = `
+[
+  {
+    "category": "aria",
+    "id": "6274ee5f8834997a",
+    "location": {
+      "end": {
+        "column": 18,
+        "line": 6,
+        "offset": 107,
+      },
+      "selector": "body:nth-of-type(1) > main:nth-of-type(1) > button:nth-of-type(1)",
+      "sourcePath": "snapshot.html",
+      "start": {
+        "column": 11,
+        "line": 6,
+        "offset": 100,
+      },
+    },
+    "message": "Button is missing an accessible name.",
+    "metadata": {
+      "docsUrl": undefined,
+      "tags": [
+        "controls",
+        "wcag-4.1.2",
+      ],
+    },
+    "remediation": "Provide text content, aria-label, or aria-labelledby.",
+    "ruleId": "button-accessible-name",
+    "severity": "error",
+  },
+  {
+    "category": "structure",
+    "id": "4303f03a854fe9a8",
+    "location": {
+      "end": {
+        "column": 15,
+        "line": 8,
+        "offset": 176,
+      },
+      "selector": "#dup",
+      "sourcePath": "snapshot.html",
+      "start": {
+        "column": 11,
+        "line": 8,
+        "offset": 172,
+      },
+    },
+    "message": "Duplicate id "dup" found.",
+    "metadata": {
+      "docsUrl": undefined,
+      "tags": [
+        "id",
+        "structure",
+      ],
+    },
+    "remediation": "Ensure each id value is unique within a page.",
+    "ruleId": "duplicate-id",
+    "severity": "error",
+  },
+  {
+    "category": "structure",
+    "id": "6d65039727181998",
+    "location": {
+      "end": {
+        "column": 19,
+        "line": 9,
+        "offset": 211,
+      },
+      "selector": "#dup",
+      "sourcePath": "snapshot.html",
+      "start": {
+        "column": 11,
+        "line": 9,
+        "offset": 203,
+      },
+    },
+    "message": "Duplicate id "dup" found.",
+    "metadata": {
+      "docsUrl": undefined,
+      "tags": [
+        "id",
+        "structure",
+      ],
+    },
+    "remediation": "Ensure each id value is unique within a page.",
+    "ruleId": "duplicate-id",
+    "severity": "error",
+  },
+  {
+    "category": "forms",
+    "id": "efc447c4b528e24f",
+    "location": {
+      "end": {
+        "column": 17,
+        "line": 10,
+        "offset": 248,
+      },
+      "selector": "#name",
+      "sourcePath": "snapshot.html",
+      "start": {
+        "column": 11,
+        "line": 10,
+        "offset": 242,
+      },
+    },
+    "message": "Form control does not have an associated accessible label.",
+    "metadata": {
+      "docsUrl": undefined,
+      "tags": [
+        "forms",
+        "wcag-3.3.2",
+      ],
+    },
+    "remediation": "Associate a <label> or provide aria-label/aria-labelledby.",
+    "ruleId": "form-control-label",
+    "severity": "error",
+  },
+  {
+    "category": "semantics",
+    "id": "0de04821f4d29bae",
+    "location": {
+      "end": {
+        "column": 14,
+        "line": 5,
+        "offset": 68,
+      },
+      "selector": "body:nth-of-type(1) > main:nth-of-type(1) > h3:nth-of-type(1)",
+      "sourcePath": "snapshot.html",
+      "start": {
+        "column": 11,
+        "line": 5,
+        "offset": 65,
+      },
+    },
+    "message": "Heading level jumps from h1 to h3.",
+    "metadata": {
+      "docsUrl": undefined,
+      "tags": [
+        "headings",
+        "wcag-1.3.1",
+      ],
+    },
+    "remediation": "Use sequential heading levels to preserve document outline.",
+    "ruleId": "heading-order",
+    "severity": "warn",
+  },
+  {
+    "category": "semantics",
+    "id": "0ec5083495419b5c",
+    "location": {
+      "end": {
+        "column": 14,
+        "line": 2,
+        "offset": 14,
+      },
+      "selector": "",
+      "sourcePath": "snapshot.html",
+      "start": {
+        "column": 9,
+        "line": 2,
+        "offset": 9,
+      },
+    },
+    "message": "The <html> element is missing a lang attribute.",
+    "metadata": {
+      "docsUrl": undefined,
+      "tags": [
+        "wcag-3.1.1",
+      ],
+    },
+    "remediation": "Add a valid language code, for example <html lang="en">.",
+    "ruleId": "html-lang",
+    "severity": "error",
+  },
+  {
+    "category": "media",
+    "id": "f581fda3cda3ed56",
+    "location": {
+      "end": {
+        "column": 15,
+        "line": 7,
+        "offset": 139,
+      },
+      "selector": "body:nth-of-type(1) > main:nth-of-type(1) > img:nth-of-type(1)",
+      "sourcePath": "snapshot.html",
+      "start": {
+        "column": 11,
+        "line": 7,
+        "offset": 135,
+      },
+    },
+    "message": "Image is missing an alt attribute.",
+    "metadata": {
+      "docsUrl": undefined,
+      "tags": [
+        "wcag-1.1.1",
+      ],
+    },
+    "remediation": "Provide meaningful alt text or empty alt for decorative images.",
+    "ruleId": "image-alt",
+    "severity": "warn",
+  },
+  {
+    "category": "aria",
+    "id": "ca1bd353011d0875",
+    "location": {
+      "end": {
+        "column": 15,
+        "line": 8,
+        "offset": 176,
+      },
+      "selector": "body:nth-of-type(1) > main:nth-of-type(1) > div:nth-of-type(2)",
+      "sourcePath": "snapshot.html",
+      "start": {
+        "column": 11,
+        "line": 8,
+        "offset": 172,
+      },
+    },
+    "message": "Element with role="button" is missing an accessible name.",
+    "metadata": {
+      "docsUrl": undefined,
+      "tags": [
+        "aria",
+        "roles",
+      ],
+    },
+    "remediation": "Provide aria-label, aria-labelledby, or meaningful text content.",
+    "ruleId": "interactive-role-name",
+    "severity": "warn",
+  },
+  {
+    "category": "aria",
+    "id": "fea7d0f4d251cc4c",
+    "location": {
+      "end": {
+        "column": 18,
+        "line": 6,
+        "offset": 107,
+      },
+      "selector": "body:nth-of-type(1) > main:nth-of-type(1) > button:nth-of-type(2)",
+      "sourcePath": "snapshot.html",
+      "start": {
+        "column": 11,
+        "line": 6,
+        "offset": 100,
+      },
+    },
+    "message": "ARIA boolean attribute "aria-hidden" must be "true" or "false".",
+    "metadata": {
+      "docsUrl": undefined,
+      "tags": [
+        "aria",
+        "wcag-4.1.2",
+      ],
+    },
+    "remediation": "Set aria-hidden to "true" or "false".",
+    "ruleId": "invalid-aria",
+    "severity": "error",
+  },
+]
+`;
