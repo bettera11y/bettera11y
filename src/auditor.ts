@@ -21,6 +21,17 @@ interface CacheEntry {
 }
 
 /**
+ * Source text used to map DOM elements back to line/column locations.
+ * For TSX/JSX, rules run on normalized HTML while diagnostics must point at the original file, so offsets are computed from `input.content`.
+ */
+function sourceTextForElementLocation(input: NormalizedAuditInput, html: string): string {
+    if (input.format === "jsx" || input.format === "tsx") {
+        return input.content;
+    }
+    return html;
+}
+
+/**
  * Top-level options accepted by the pure-function audit API.
  */
 export interface AuditFunctionOptions extends AuditorConfig {
@@ -158,7 +169,7 @@ function buildAuditor(
                     locate(element) {
                         const selector = runtimeAdapter.createSelector(element);
                         return runtimeAdapter.locateElement(
-                            html,
+                            sourceTextForElementLocation(normalizedInput, html),
                             element,
                             selector,
                             normalizedInput.filepath ?? normalizedInput.source?.path
@@ -347,7 +358,7 @@ function buildAuditor(
                     locate(element) {
                         const selector = runtimeAdapter.createSelector(element);
                         return runtimeAdapter.locateElement(
-                            html,
+                            sourceTextForElementLocation(normalizedInput, html),
                             element,
                             selector,
                             normalizedInput.filepath ?? normalizedInput.source?.path

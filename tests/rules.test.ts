@@ -114,4 +114,24 @@ describe("default rules", () => {
         );
         expect(result.diagnostics.some((d) => d.ruleId === "image-alt")).toBe(true);
     });
+
+    it("maps TSX image-alt locations to the original source file", async () => {
+        const lines = [
+            "/**",
+            " * Demo",
+            " */",
+            "export default function App() {",
+            "  return (",
+            "    <main>",
+            '      <img src="/x.png" />',
+            "    </main>",
+            "  );",
+            "}"
+        ];
+        const source = lines.join("\n");
+        const result = await audit(source, { filepath: "App.tsx", format: "tsx", rules: defaultRules });
+        const imgDiag = result.diagnostics.find((d) => d.ruleId === "image-alt");
+        expect(imgDiag?.location?.start?.line).toBe(7);
+        expect(source.split("\n")[imgDiag!.location!.start!.line - 1]).toContain("<img");
+    });
 });

@@ -444,7 +444,7 @@ export function createElementSelector(element: Element): string {
 /**
  * Locates element tag offsets in source to generate a source location range.
  *
- * @param source Original source text.
+ * @param source Text used for byte offsets (original TSX/JSX for component audits, or analyzed HTML otherwise).
  * @param element Element being located.
  * @param selector Element selector.
  * @param sourcePath Optional source path metadata.
