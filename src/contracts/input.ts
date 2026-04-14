@@ -49,6 +49,12 @@ const extensionToFormat = new Map<string, AuditFormat>([
     [".sass", "css"]
 ]);
 
+/**
+ * Infers audit format from a file path extension.
+ *
+ * @param filepath Optional source path used for format inference.
+ * @returns The inferred format, or undefined when no supported extension exists.
+ */
 export function inferFormatFromFilepath(filepath?: string): AuditFormat | undefined {
     if (!filepath) {
         return undefined;
@@ -61,6 +67,13 @@ export function inferFormatFromFilepath(filepath?: string): AuditFormat | undefi
     return extensionToFormat.get(extension);
 }
 
+/**
+ * Normalizes user-facing audit input into the internal canonical input shape.
+ *
+ * @param input Raw audit input provided as a string or structured object.
+ * @param options Optional overrides for id/format/filepath/source metadata.
+ * @returns Canonical normalized input used by the runtime and rules.
+ */
 export function normalizeAuditInput(
     input: AuditInput,
     options: AuditInputNormalizationOptions = {}
@@ -86,6 +99,12 @@ export function normalizeAuditInput(
     };
 }
 
+/**
+ * Performs runtime validation against normalized audit input.
+ *
+ * @param input Canonical normalized input to validate.
+ * @returns List of validation errors. Empty list means input is valid.
+ */
 export function validateAuditInput(input: NormalizedAuditInput): string[] {
     const errors: string[] = [];
 

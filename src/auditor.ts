@@ -20,6 +20,9 @@ interface CacheEntry {
     createdAt: number;
 }
 
+/**
+ * Top-level options accepted by the pure-function audit API.
+ */
 export interface AuditFunctionOptions extends AuditorConfig {
     rules?: RuleDefinition[];
     runtimeAdapter?: RuntimeAdapter;
@@ -60,7 +63,9 @@ function buildAuditor(
     config: AuditFunctionOptions = {},
     runtimeAdapter: RuntimeAdapter = defaultRuntimeAdapter
 ): InternalAuditor {
+    /** In-memory rule registry keyed by rule id for deterministic lookup. */
     const ruleMap = new Map<string, RuleDefinition>();
+    /** Bounded result cache used for repeat audits in a single auditor instance. */
     const cache = new Map<string, CacheEntry>();
     const maxEntries = config.cache?.maxEntries ?? 200;
     const ttlMs = config.cache?.ttlMs ?? 5 * 60 * 1000;
@@ -69,6 +74,9 @@ function buildAuditor(
         ruleMap.set(rule.meta.id, rule);
     });
 
+    /**
+     * Removes expired entries and enforces max cache size.
+     */
     const clearExpiredCache = (): void => {
         const now = Date.now();
         for (const [key, entry] of cache.entries()) {
@@ -83,9 +91,15 @@ function buildAuditor(
         }
     };
 
+    /**
+     * Lists rules in deterministic id order.
+     */
     const listRules = (): RuleDefinition[] =>
         Array.from(ruleMap.values()).sort((a, b) => a.meta.id.localeCompare(b.meta.id));
 
+    /**
+     * Creates a standardized system diagnostic payload.
+     */
     const createSystemDiagnostic = (message: string, ruleId = "__system__"): AuditDiagnostic => ({
         id: createDiagnosticFingerprint({
             ruleId,
@@ -99,6 +113,9 @@ function buildAuditor(
         category: "system"
     });
 
+    /**
+     * Builds an audit result containing validation errors.
+     */
     const createInvalidInputResult = (input: NormalizedAuditInput, messages: string[], start: number): AuditResult => ({
         diagnostics: messages.map((msg) => createSystemDiagnostic(`Invalid audit input: ${msg}`)),
         metadata: {
@@ -110,6 +127,9 @@ function buildAuditor(
         }
     });
 
+    /**
+     * Executes all enabled rules synchronously.
+     */
     const runRulesSync = (
         normalizedInput: NormalizedAuditInput,
         html: string,
@@ -193,6 +213,38 @@ function buildAuditor(
         return { diagnostics, ruleTimingsMs };
     };
 
+    /**
+     * Builds a deterministic cache key from input/rule configuration.
+     */
+    const buildCacheKey = (html: string, input: NormalizedAuditInput): string => {
+        const rules = listRules().filter((rule) => config.enabledRules?.[rule.meta.id] !== false);
+        return getSha256(
+            `${config.apiVersion ?? BETTERA11Y_API_VERSION}:${input.source?.contentHash ?? getSha256(html)}:${rules
+                .map(
+                    (rule) =>
+                        `${rule.meta.id}:${config.severityOverrides?.[rule.meta.id] ?? "default"}:${JSON.stringify(config.ruleOptions?.[rule.meta.id] ?? {})}`
+                )
+                .join("|")}`
+        );
+    };
+
+    /**
+     * Creates a consistent system result when input cannot be normalized into HTML.
+     */
+    const createNoHtmlResult = (input: NormalizedAuditInput, start: number): AuditResult => ({
+        diagnostics: [createSystemDiagnostic("Audit input could not be normalized to HTML.")],
+        metadata: {
+            inputId: input.id,
+            sourcePath: input.filepath ?? input.source?.path,
+            cacheHit: false,
+            durationMs: Number((performance.now() - start).toFixed(3)),
+            ruleTimingsMs: {}
+        }
+    });
+
+    /**
+     * Synchronous one-shot audit execution.
+     */
     const auditSync = (input: AuditInput, inputOptions: AuditInputNormalizationOptions = {}): AuditResult => {
         clearExpiredCache();
         const start = performance.now();
@@ -204,27 +256,10 @@ function buildAuditor(
 
         const html = runtimeAdapter.toHtml(normalizedInput, config.normalizers);
         if (!html) {
-            return {
-                diagnostics: [createSystemDiagnostic("Audit input could not be normalized to HTML.")],
-                metadata: {
-                    inputId: normalizedInput.id,
-                    sourcePath: normalizedInput.filepath ?? normalizedInput.source?.path,
-                    cacheHit: false,
-                    durationMs: Number((performance.now() - start).toFixed(3)),
-                    ruleTimingsMs: {}
-                }
-            };
+            return createNoHtmlResult(normalizedInput, start);
         }
 
-        const rules = listRules().filter((rule) => config.enabledRules?.[rule.meta.id] !== false);
-        const cacheKey = getSha256(
-            `${config.apiVersion ?? BETTERA11Y_API_VERSION}:${normalizedInput.source?.contentHash ?? getSha256(html)}:${rules
-                .map(
-                    (rule) =>
-                        `${rule.meta.id}:${config.severityOverrides?.[rule.meta.id] ?? "default"}:${JSON.stringify(config.ruleOptions?.[rule.meta.id] ?? {})}`
-                )
-                .join("|")}`
-        );
+        const cacheKey = buildCacheKey(html, normalizedInput);
         const cached = cache.get(cacheKey);
         if (cached) {
             return {
@@ -254,6 +289,9 @@ function buildAuditor(
         return result;
     };
 
+    /**
+     * Asynchronous one-shot audit execution.
+     */
     const audit = async (
         input: AuditInput,
         inputOptions: AuditInputNormalizationOptions = {},
@@ -273,27 +311,11 @@ function buildAuditor(
 
         const html = runtimeAdapter.toHtml(normalizedInput, config.normalizers);
         if (!html) {
-            return {
-                diagnostics: [createSystemDiagnostic("Audit input could not be normalized to HTML.")],
-                metadata: {
-                    inputId: normalizedInput.id,
-                    sourcePath: normalizedInput.filepath ?? normalizedInput.source?.path,
-                    cacheHit: false,
-                    durationMs: Number((performance.now() - start).toFixed(3)),
-                    ruleTimingsMs: {}
-                }
-            };
+            return createNoHtmlResult(normalizedInput, start);
         }
 
         const rules = listRules().filter((rule) => config.enabledRules?.[rule.meta.id] !== false);
-        const cacheKey = getSha256(
-            `${config.apiVersion ?? BETTERA11Y_API_VERSION}:${normalizedInput.source?.contentHash ?? getSha256(html)}:${rules
-                .map(
-                    (rule) =>
-                        `${rule.meta.id}:${config.severityOverrides?.[rule.meta.id] ?? "default"}:${JSON.stringify(config.ruleOptions?.[rule.meta.id] ?? {})}`
-                )
-                .join("|")}`
-        );
+        const cacheKey = buildCacheKey(html, normalizedInput);
         const cached = cache.get(cacheKey);
         if (cached) {
             return {
@@ -388,6 +410,9 @@ function buildAuditor(
         return result;
     };
 
+    /**
+     * Async helper that returns true when no diagnostics are emitted.
+     */
     const check = async (
         input: AuditInput,
         options: AuditInputNormalizationOptions = {},
@@ -397,9 +422,15 @@ function buildAuditor(
         return result.diagnostics.length === 0;
     };
 
+    /**
+     * Sync helper that returns true when no diagnostics are emitted.
+     */
     const checkSync = (input: AuditInput, options: AuditInputNormalizationOptions = {}): boolean =>
         auditSync(input, options).diagnostics.length === 0;
 
+    /**
+     * Executes a batch of changes using the same auditor configuration.
+     */
     const auditIncremental = async (
         request: IncrementalAuditRequest,
         options: AuditInputNormalizationOptions = {},
@@ -471,11 +502,17 @@ export async function audit(
     return auditor.audit(input, options, signal);
 }
 
+/**
+ * Runs a synchronous one-shot audit.
+ */
 export function auditSync(input: AuditInput, options: AuditFunctionOptions = {}): AuditResult {
     const auditor = buildAuditor(options.rules ?? [], options, options.runtimeAdapter ?? defaultRuntimeAdapter);
     return auditor.auditSync(input, options);
 }
 
+/**
+ * Returns true when async audit emits no diagnostics.
+ */
 export async function check(
     input: AuditInput,
     options: AuditFunctionOptions = {},
@@ -485,11 +522,17 @@ export async function check(
     return auditor.check(input, options, signal);
 }
 
+/**
+ * Returns true when sync audit emits no diagnostics.
+ */
 export function checkSync(input: AuditInput, options: AuditFunctionOptions = {}): boolean {
     const auditor = buildAuditor(options.rules ?? [], options, options.runtimeAdapter ?? defaultRuntimeAdapter);
     return auditor.checkSync(input, options);
 }
 
+/**
+ * Audits a batch of changes in order.
+ */
 export async function auditIncremental(
     request: IncrementalAuditRequest,
     options: AuditFunctionOptions = {},
@@ -499,6 +542,9 @@ export async function auditIncremental(
     return auditor.auditIncremental(request, options, signal);
 }
 
+/**
+ * Creates a stateful audit session for long-lived watch/dev workflows.
+ */
 export function startAuditSession(options: AuditFunctionOptions = {}): AuditSession {
     const auditor = buildAuditor(options.rules ?? [], options, options.runtimeAdapter ?? defaultRuntimeAdapter);
     return auditor.startAuditSession(options.telemetry);

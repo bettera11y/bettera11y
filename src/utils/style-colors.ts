@@ -5,6 +5,7 @@ export interface RgbaColor {
     a: number;
 }
 
+/** Named CSS colors supported by the style-auditing parser. */
 const namedColors: Record<string, string> = {
     black: "#000000",
     silver: "#c0c0c0",
@@ -26,10 +27,24 @@ const namedColors: Record<string, string> = {
     transparent: "#00000000"
 };
 
+/**
+ * Clamps a numeric channel into the 0-255 RGB range.
+ *
+ * @param value Raw channel value.
+ * @returns Clamped and rounded channel value.
+ */
 function clampChannel(value: number): number {
     return Math.max(0, Math.min(255, Math.round(value)));
 }
 
+/**
+ * Converts HSL components into an RGBA object.
+ *
+ * @param h Hue value.
+ * @param s Saturation from 0 to 1.
+ * @param l Lightness from 0 to 1.
+ * @returns Converted RGBA color with alpha = 1.
+ */
 function hslToRgb(h: number, s: number, l: number): RgbaColor {
     const hue = ((h % 360) + 360) % 360;
     const saturation = Math.max(0, Math.min(1, s));
@@ -71,6 +86,12 @@ function hslToRgb(h: number, s: number, l: number): RgbaColor {
     };
 }
 
+/**
+ * Parses comma-separated RGB/RGBA channels.
+ *
+ * @param text Channel text found inside rgb()/rgba().
+ * @returns Parsed channels [r,g,b,(a)] or null when parsing fails.
+ */
 function parseRgbChannels(text: string): number[] | null {
     const parts = text.split(",").map((part) => part.trim());
     if (parts.length < 3 || parts.length > 4) {
@@ -98,6 +119,12 @@ function parseRgbChannels(text: string): number[] | null {
     return channels;
 }
 
+/**
+ * Parses comma-separated HSL/HSLA channels.
+ *
+ * @param text Channel text found inside hsl()/hsla().
+ * @returns Parsed channels [h,s,l,a] or null when parsing fails.
+ */
 function parseHslChannels(text: string): number[] | null {
     const parts = text.split(",").map((part) => part.trim());
     if (parts.length < 3 || parts.length > 4) {
@@ -116,6 +143,12 @@ function parseHslChannels(text: string): number[] | null {
     return [h, s, l, Math.max(0, Math.min(1, alpha))];
 }
 
+/**
+ * Parses a CSS color string into RGBA components.
+ *
+ * @param input CSS color text.
+ * @returns Parsed RGBA color, or null for unsupported formats.
+ */
 export function parseCssColor(input: string | undefined): RgbaColor | null {
     if (!input) {
         return null;
@@ -165,6 +198,12 @@ export function parseCssColor(input: string | undefined): RgbaColor | null {
     return null;
 }
 
+/**
+ * Formats RGBA color values back into CSS color notation.
+ *
+ * @param color RGBA color object.
+ * @returns rgb(...) or rgba(...) representation.
+ */
 export function formatColor(color: RgbaColor): string {
     if (color.a < 1) {
         return `rgba(${color.r}, ${color.g}, ${color.b}, ${Number(color.a.toFixed(3))})`;
@@ -172,6 +211,12 @@ export function formatColor(color: RgbaColor): string {
     return `rgb(${color.r}, ${color.g}, ${color.b})`;
 }
 
+/**
+ * Computes WCAG relative luminance for a color.
+ *
+ * @param color RGBA color object.
+ * @returns Relative luminance from 0 to 1.
+ */
 export function relativeLuminance(color: RgbaColor): number {
     const convert = (channel: number) => {
         const normalized = channel / 255;
@@ -181,6 +226,13 @@ export function relativeLuminance(color: RgbaColor): number {
     return 0.2126 * convert(color.r) + 0.7152 * convert(color.g) + 0.0722 * convert(color.b);
 }
 
+/**
+ * Calculates contrast ratio between foreground and background colors.
+ *
+ * @param foreground Parsed foreground color.
+ * @param background Parsed background color.
+ * @returns WCAG contrast ratio rounded to three decimals.
+ */
 export function contrastRatio(foreground: RgbaColor, background: RgbaColor): number {
     const lighter = Math.max(relativeLuminance(foreground), relativeLuminance(background));
     const darker = Math.min(relativeLuminance(foreground), relativeLuminance(background));

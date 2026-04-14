@@ -4,6 +4,12 @@ export interface CssRuleBlock {
     startIndex: number;
 }
 
+/**
+ * Parses a CSS declaration block string into property/value pairs.
+ *
+ * @param input Declaration text such as `color:red; background:#fff`.
+ * @returns Lower-cased declaration map.
+ */
 export function parseDeclarationBlock(input: string): Record<string, string> {
     const declarations: Record<string, string> = {};
     const parts = input.split(";");
@@ -22,6 +28,12 @@ export function parseDeclarationBlock(input: string): Record<string, string> {
     return declarations;
 }
 
+/**
+ * Parses CSS text into flat selector/declaration rule blocks.
+ *
+ * @param cssText Raw CSS text.
+ * @returns Parsed rule block collection with source offsets.
+ */
 export function parseCssRuleBlocks(cssText: string): CssRuleBlock[] {
     const cleaned = cssText.replace(/\/\*[\s\S]*?\*\//g, "");
     const blocks: CssRuleBlock[] = [];
@@ -42,6 +54,12 @@ export function parseCssRuleBlocks(cssText: string): CssRuleBlock[] {
     return blocks;
 }
 
+/**
+ * Extracts only CSS custom properties from a declaration map.
+ *
+ * @param declarations CSS declarations keyed by property name.
+ * @returns Variable map containing entries whose name starts with `--`.
+ */
 export function extractVariableDeclarations(declarations: Record<string, string>): Record<string, string> {
     const variables: Record<string, string> = {};
     for (const [name, value] of Object.entries(declarations)) {
@@ -52,6 +70,12 @@ export function extractVariableDeclarations(declarations: Record<string, string>
     return variables;
 }
 
+/**
+ * Merges multiple variable maps where later maps override earlier values.
+ *
+ * @param maps Variable maps ordered from lowest to highest precedence.
+ * @returns Combined variable map.
+ */
 export function mergeVariableMaps(...maps: Array<Record<string, string>>): Record<string, string> {
     return maps.reduce<Record<string, string>>((accumulator, map) => {
         for (const [name, value] of Object.entries(map)) {
@@ -61,6 +85,14 @@ export function mergeVariableMaps(...maps: Array<Record<string, string>>): Recor
     }, {});
 }
 
+/**
+ * Resolves `var(--token, fallback)` expressions recursively.
+ *
+ * @param value CSS value that may contain `var(...)`.
+ * @param variables Available variable definitions.
+ * @param stack Internal recursion guard for cyclic references.
+ * @returns Resolved value, or null when no value remains.
+ */
 export function resolveCssValueWithVariables(
     value: string | undefined,
     variables: Record<string, string>,
@@ -99,6 +131,12 @@ export function resolveCssValueWithVariables(
     return normalized.length > 0 ? normalized : null;
 }
 
+/**
+ * Parses inline style attribute text into declaration pairs.
+ *
+ * @param styleText Element style attribute value.
+ * @returns Parsed declarations, or an empty map when style text is missing.
+ */
 export function extractInlineStyleDeclarations(styleText: string | null): Record<string, string> {
     if (!styleText) {
         return {};

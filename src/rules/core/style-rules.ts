@@ -12,13 +12,27 @@ import {
 } from "../../utils";
 import { extractVariableDeclarations } from "../../utils/style-variables";
 
+/** Default WCAG AA threshold for normal text. */
 const DEFAULT_NORMAL_TEXT_THRESHOLD = 4.5;
+/** Default WCAG AA threshold for large text. */
 const DEFAULT_LARGE_TEXT_THRESHOLD = 3;
+/** Large text threshold in pixels for regular weight text. */
 const DEFAULT_LARGE_TEXT_PX = 24;
+/** Large text threshold in pixels for bold text. */
 const DEFAULT_LARGE_BOLD_TEXT_PX = 18.66;
+/** Minimum recommended font size used by readability heuristic. */
 const DEFAULT_MIN_FONT_SIZE_PX = 12;
+/** Minimum recommended line-height ratio used by readability heuristic. */
 const DEFAULT_MIN_LINE_HEIGHT_RATIO = 1.3;
 
+/**
+ * Reads a numeric option with graceful fallback parsing.
+ *
+ * @param options Rule options payload.
+ * @param key Target option key.
+ * @param fallback Fallback value.
+ * @returns Parsed numeric option.
+ */
 function getNumberOption(
     options: Record<string, boolean | number | string> | undefined,
     key: string,
@@ -37,6 +51,13 @@ function getNumberOption(
     return fallback;
 }
 
+/**
+ * Resolves and parses a CSS color value with variable substitution.
+ *
+ * @param value Raw color expression.
+ * @param variables Available CSS variables.
+ * @returns Parsed color or null when unresolved.
+ */
 function resolveContextColor(
     value: string | undefined,
     variables: Record<string, string>
@@ -45,6 +66,14 @@ function resolveContextColor(
     return parseCssColor(resolved ?? undefined);
 }
 
+/**
+ * Determines whether text should use the large-text contrast threshold.
+ *
+ * @param fontSizePx Font size in pixels.
+ * @param fontWeight Numeric font weight.
+ * @param options Rule option overrides.
+ * @returns True when text qualifies as large text.
+ */
 function isLargeText(
     fontSizePx: number | undefined,
     fontWeight: number | undefined,
@@ -59,6 +88,19 @@ function isLargeText(
     return fontSizePx >= largeTextPx || (weight >= 700 && fontSizePx >= largeBoldTextPx);
 }
 
+/**
+ * Builds a standardized contrast diagnostic payload.
+ *
+ * @param ruleId Rule identifier.
+ * @param contrast Measured contrast ratio.
+ * @param threshold Required threshold.
+ * @param foreground Resolved foreground color string.
+ * @param background Resolved background color string.
+ * @param location Diagnostic source location.
+ * @param sourceType Inline style or CSS rule origin.
+ * @param messagePrefix Prefix for diagnostic message.
+ * @returns Rule diagnostic object.
+ */
 function createContrastDiagnostic(
     ruleId: string,
     contrast: number,
@@ -87,6 +129,14 @@ function createContrastDiagnostic(
     };
 }
 
+/**
+ * Runs contrast analysis on text elements using inline/inherited style context.
+ *
+ * @param document DOM document.
+ * @param locate Source locator helper.
+ * @param options Rule options.
+ * @returns Contrast diagnostics for inline style context.
+ */
 function runInlineContrastChecks(
     document: Document,
     locate: (element: Element) => DiagnosticLocation,
@@ -147,6 +197,14 @@ function runInlineContrastChecks(
     return diagnostics;
 }
 
+/**
+ * Runs contrast analysis on raw CSS declaration blocks.
+ *
+ * @param cssText Raw CSS content.
+ * @param sourcePath Optional CSS source path.
+ * @param options Rule options.
+ * @returns Contrast diagnostics derived from CSS rules.
+ */
 function runCssContrastChecks(
     cssText: string,
     sourcePath: string | undefined,
@@ -189,6 +247,14 @@ function runCssContrastChecks(
     return diagnostics;
 }
 
+/**
+ * Applies typography readability heuristics on text-bearing elements.
+ *
+ * @param document DOM document.
+ * @param locate Source locator helper.
+ * @param options Rule options.
+ * @returns Readability diagnostics.
+ */
 function runReadabilityChecks(
     document: Document,
     locate: (element: Element) => DiagnosticLocation,
@@ -235,6 +301,7 @@ function runReadabilityChecks(
     return diagnostics;
 }
 
+/** Rule that reports low color contrast issues for inline and raw CSS inputs. */
 export const colorContrastRule: RuleDefinition = {
     meta: {
         id: "color-contrast",
@@ -276,6 +343,7 @@ export const colorContrastRule: RuleDefinition = {
     }
 };
 
+/** Rule that reports basic text readability heuristics for inline style context. */
 export const textReadabilityRule: RuleDefinition = {
     meta: {
         id: "text-readability",

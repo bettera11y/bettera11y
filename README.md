@@ -84,3 +84,9 @@ flowchart LR
 - `recommendedPreset`: low-noise default for most integrations.
 - `strictPreset`: full core ruleset for strict CI/dev policies.
 - `wcagAaBaselinePreset`: WCAG AA oriented baseline.
+
+## Style Auditing Notes
+
+- CSS support in the current layer is static and input-bound (inline styles + raw CSS content).
+- Full browser-accurate cascade resolution across external stylesheets is intentionally out of scope for now.
+- When background styles cannot be resolved with confidence, diagnostics use conservative defaults and metadata hints.

@@ -29,6 +29,7 @@ export const myRule: RuleDefinition = {
 - Return concise remediation guidance for each diagnostic.
 - Keep rule execution deterministic (sorted traversals where relevant).
 - Use `context.signal` to bail out early during cancellations.
+- Add JSDoc blocks for non-trivial helpers and constants used by your rule implementation.
 
 ## Rule Option Schemas
 

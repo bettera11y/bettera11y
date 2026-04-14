@@ -1,5 +1,11 @@
 import { extractInlineStyleDeclarations, extractVariableDeclarations, mergeVariableMaps } from "./style-variables";
 
+/**
+ * Parses a CSS font-size value into pixels.
+ *
+ * @param value CSS font-size value.
+ * @returns Pixel size or null when unsupported.
+ */
 function parseFontSizePx(value: string | undefined): number | null {
     if (!value) {
         return null;
@@ -17,6 +23,13 @@ function parseFontSizePx(value: string | undefined): number | null {
     return Number.isFinite(numeric) ? numeric : null;
 }
 
+/**
+ * Parses line-height into pixels when possible.
+ *
+ * @param lineHeight CSS line-height value.
+ * @param fontSizePx Resolved font size used for ratio-based line-height.
+ * @returns Line-height in pixels, or null when unsupported.
+ */
 function parseLineHeight(lineHeight: string | undefined, fontSizePx: number | null): number | null {
     if (!lineHeight) {
         return null;
@@ -36,6 +49,12 @@ function parseLineHeight(lineHeight: string | undefined, fontSizePx: number | nu
     return numeric * fontSizePx;
 }
 
+/**
+ * Parses CSS font-weight into numeric weight.
+ *
+ * @param weight CSS font-weight value.
+ * @returns Numeric font weight with defaults for normal/bold values.
+ */
 function parseFontWeight(weight: string | undefined): number {
     if (!weight) {
         return 400;
@@ -60,13 +79,21 @@ export interface InlineStyleSnapshot {
     variables: Record<string, string>;
 }
 
+/**
+ * Traverses ancestor inline styles to collect inheritable style context.
+ *
+ * @param element Element whose style context should be computed.
+ * @returns Snapshot of inherited/inline style values and resolved variables.
+ */
 export function collectInlineStyleSnapshot(element: Element): InlineStyleSnapshot {
+    /** Tracks the current node while traversing ancestor chain for inheritance. */
     let current: Element | null = element;
     let color: string | undefined;
     let backgroundColor: string | undefined;
     let fontSizePx: number | undefined;
     let lineHeightPx: number | undefined;
     let fontWeight: number | undefined;
+    /** Variable map merged from root ancestor to current element. */
     let variables: Record<string, string> = {};
 
     while (current) {

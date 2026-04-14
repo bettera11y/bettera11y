@@ -20,6 +20,12 @@ import { marked } from "marked";
 import type { AuditFormat, DiagnosticLocation, NormalizedAuditInput } from "./contracts";
 import { createRangeLocation, selectorToSourceLocation } from "./utils";
 
+/**
+ * Builds a DOM document from HTML markup.
+ *
+ * @param html HTML text to parse.
+ * @returns DOM document.
+ */
 export function createDocumentFromHtml(html: string): Document {
     return new JSDOM(html).window.document;
 }
@@ -33,15 +39,33 @@ export interface RuntimeAdapter {
 
 export type Normalizer = (content: string) => string | null;
 
+/**
+ * Escapes user content before embedding as HTML text.
+ *
+ * @param value Untrusted text content.
+ * @returns HTML-escaped text.
+ */
 function escapeHtml(value: string): string {
     return value.replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;");
 }
 
+/**
+ * Converts markdown content into HTML using `marked`.
+ *
+ * @param content Markdown source text.
+ * @returns Rendered HTML or null when conversion fails.
+ */
 export const markdownToHtml: Normalizer = (content) => {
     const rendered = marked.parse(content, { async: false, gfm: true });
     return typeof rendered === "string" ? rendered : null;
 };
 
+/**
+ * Converts a JSX name node into tag/property text.
+ *
+ * @param name JSX name node.
+ * @returns Text form used in serialized HTML-like output.
+ */
 function jsxNameToTag(name: JSXIdentifier | JSXMemberExpression | JSXNamespacedName): string {
     if (name.type === "JSXIdentifier") {
         return name.name;
@@ -52,6 +76,12 @@ function jsxNameToTag(name: JSXIdentifier | JSXMemberExpression | JSXNamespacedN
     return `${jsxNameToTag(name.object)}.${jsxNameToTag(name.property)}`;
 }
 
+/**
+ * Serializes JSX attributes into HTML attribute syntax.
+ *
+ * @param attribute JSX attribute node.
+ * @returns Serialized attribute text.
+ */
 function serializeJsxAttribute(attribute: JSXAttribute | JSXSpreadAttribute): string {
     if (attribute.type === "JSXSpreadAttribute") {
         return "";
@@ -85,6 +115,12 @@ function serializeJsxAttribute(attribute: JSXAttribute | JSXSpreadAttribute): st
     return "";
 }
 
+/**
+ * Serializes a JSX style object expression into inline CSS declaration text.
+ *
+ * @param expression JSX object literal used in style prop.
+ * @returns Semicolon-separated CSS declaration string.
+ */
 function serializeStyleObjectExpression(expression: ObjectExpression): string {
     const declarations: string[] = [];
     for (const property of expression.properties) {
@@ -104,6 +140,12 @@ function serializeStyleObjectExpression(expression: ObjectExpression): string {
     return declarations.join(";");
 }
 
+/**
+ * Extracts an object property key for style serialization.
+ *
+ * @param property Object property node.
+ * @returns Key name or null when key type is unsupported.
+ */
 function extractObjectPropertyKey(property: ObjectProperty): string | null {
     if (property.key.type === "Identifier") {
         return property.key.name;
@@ -116,6 +158,12 @@ function extractObjectPropertyKey(property: ObjectProperty): string | null {
 
 type JsxChildNode = JSXText | JSXExpressionContainer | JSXElement | JSXFragment | JSXSpreadChild;
 
+/**
+ * Serializes a JSX child node into HTML-like text.
+ *
+ * @param child JSX child node.
+ * @returns Serialized content fragment.
+ */
 function serializeJsxChild(child: JsxChildNode): string {
     if (child.type === "JSXText") {
         return escapeHtml(child.value);
@@ -140,6 +188,12 @@ function serializeJsxChild(child: JsxChildNode): string {
     return "";
 }
 
+/**
+ * Serializes a JSX element subtree to HTML-like output.
+ *
+ * @param element JSX element node.
+ * @returns Serialized HTML-like text.
+ */
 function serializeJsxElement(element: JSXElement): string {
     const tag = jsxNameToTag(element.openingElement.name);
     const attributes = element.openingElement.attributes.map(serializeJsxAttribute).filter(Boolean).join(" ");
@@ -158,9 +212,21 @@ function serializeJsxElement(element: JSXElement): string {
     return `<${tag}${attributePrefix}>${childrenHtml}</${tag}>`;
 }
 
+/**
+ * Collects JSX output candidates from top-level program statements.
+ *
+ * @param program Parsed Babel program.
+ * @returns Joined serialized HTML-like output.
+ */
 function collectProgramJsx(program: Program): string {
+    /** Accumulates serialized JSX fragments discovered in program traversal. */
     const pieces: string[] = [];
 
+    /**
+     * Pushes JSX-like nodes into output when they can be serialized.
+     *
+     * @param node Candidate AST node.
+     */
     const tryPushNode = (node: Node | null | undefined): void => {
         if (!node) {
             return;
@@ -209,6 +275,13 @@ function collectProgramJsx(program: Program): string {
     return pieces.join("\n");
 }
 
+/**
+ * Parses JSX/TSX and converts discovered JSX structures to HTML-like text.
+ *
+ * @param content Source code.
+ * @param tsx Whether TypeScript syntax support is enabled.
+ * @returns Serialized HTML-like output, fallback text wrapper, or null on parse failure.
+ */
 function jsxLikeToHtml(content: string, tsx: boolean): string | null {
     try {
         const ast = parse(content, {
@@ -222,15 +295,29 @@ function jsxLikeToHtml(content: string, tsx: boolean): string | null {
     }
 }
 
+/**
+ * Converts JSX source to HTML-like text.
+ *
+ * @param content JSX source code.
+ * @returns HTML-like representation or null on parse failure.
+ */
 export const jsxToHtml: Normalizer = (content) => {
     return jsxLikeToHtml(content, false);
 };
 
+/**
+ * Converts TSX source to HTML-like text.
+ *
+ * @param content TSX source code.
+ * @returns HTML-like representation or null on parse failure.
+ */
 export const tsxToHtml: Normalizer = (content) => {
     return jsxLikeToHtml(content, true);
 };
 
+/** Wraps plain text in a preformatted block for DOM-based rule analysis. */
 export const textToHtml: Normalizer = (content) => `<pre>${escapeHtml(content)}</pre>`;
+/** Wraps raw CSS content in a style element to preserve embedded styles for analysis. */
 export const cssToHtml: Normalizer = (content) => `<style>${content}</style>`;
 
 export const builtinNormalizers: Record<AuditFormat, Normalizer> = {
@@ -242,6 +329,13 @@ export const builtinNormalizers: Record<AuditFormat, Normalizer> = {
     css: cssToHtml
 };
 
+/**
+ * Normalizes canonical audit input to analyzable HTML via format normalizers.
+ *
+ * @param input Canonical normalized input.
+ * @param normalizers Optional normalizer overrides by format.
+ * @returns HTML output or null when no normalizer can handle the format.
+ */
 export function normalizeInputToHtml(
     input: NormalizedAuditInput,
     normalizers: Partial<Record<AuditFormat, Normalizer>> = {}
@@ -253,6 +347,12 @@ export function normalizeInputToHtml(
     return normalizer(input.content);
 }
 
+/**
+ * Builds a deterministic selector for the provided element.
+ *
+ * @param element DOM element.
+ * @returns CSS-like selector used in diagnostics.
+ */
 export function createElementSelector(element: Element): string {
     const id = element.getAttribute("id");
     if (id) {
@@ -279,6 +379,15 @@ export function createElementSelector(element: Element): string {
     return parts.join(" > ");
 }
 
+/**
+ * Locates element tag offsets in source to generate a source location range.
+ *
+ * @param source Original source text.
+ * @param element Element being located.
+ * @param selector Element selector.
+ * @param sourcePath Optional source path metadata.
+ * @returns Best-effort source location.
+ */
 export function locateElementInSource(source: string, element: Element, selector: string, sourcePath?: string) {
     const tag = element.tagName.toLowerCase();
     const pattern = new RegExp(`<${tag}\\b`, "g");
