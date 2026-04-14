@@ -32,7 +32,8 @@
         "test:performance": "vitest run tests/performance",
         "test:smoke:esm": "node --input-type=module -e \"import('./dist/index.js').then((m)=>{ if (!m.audit) throw new Error('Missing audit export'); if (!m.auditIncremental) throw new Error('Missing auditIncremental export'); if (!m.startAuditSession) throw new Error('Missing startAuditSession export'); })\"",
         "test:smoke:cjs": "node -e \"const m=require('./dist/index.cjs'); if (!m.audit) throw new Error('Missing audit export'); if (!m.auditIncremental) throw new Error('Missing auditIncremental export'); if (!m.startAuditSession) throw new Error('Missing startAuditSession export');\"",
-        "validate:release": "npm run format:check && npm run typecheck && npm run test && npm run build"
+        "validate:release": "npm run format:check && npm run typecheck && npm run test && npm run build",
+        "prepare": "husky"
     },
     "dependencies": {
         "@babel/parser": "^7.29.2",
@@ -45,6 +46,7 @@
         "@commitlint/config-conventional": "^19.8.0",
         "@types/jsdom": "^21.1.7",
         "@types/node": "^22.15.3",
+        "husky": "^9.1.7",
         "prettier": "^3.5.3",
         "tsup": "^8.4.0",
         "typescript": "^5.8.3",
