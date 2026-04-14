@@ -1,8 +1,12 @@
 # BetterA11y Core API
 
-`bettera11y` is the standalone, integration-agnostic API layer for BetterA11y.
-It is designed to be imported by separate integration packages (ESLint, Vite,
-Next.js, browser extension) without embedding any of those runtimes here.
+[![npm version](https://img.shields.io/npm/v/bettera11y)](https://www.npmjs.com/package/bettera11y)
+
+`bettera11y` is the standalone core engine for BetterA11y.
+
+Use it to run accessibility audits, apply rule presets, and return normalized
+diagnostics that can be consumed by separate tooling packages (ESLint, Vite,
+Next.js, browser extensions, and custom integrations).
 
 ## Install
 
@@ -25,16 +29,15 @@ const result = await engine.run({
 console.log(result.diagnostics);
 ```
 
-## Integration SDK Surface
+## What You Get
 
-- `createEngine(initialRules?)`: creates an audit engine instance.
-- `createAuditSession()` on engine: long-lived dev server/watch session API.
-- `recommendedPreset`, `strictPreset`, `wcagAaBaselinePreset`: production rule presets.
-- `MockAdapter`: reference adapter for integration contract testing.
-- `createPrettyReporter()`, `createJsonReporter()`, `createMachineReporter()`: output formatting helpers.
-- `selectorToSourceLocation()`, `translateSeverity()`, `createDiagnosticFingerprint()`: mapping/translation utilities for external integrations.
+- **Audit engine**: run one-shot or incremental audits.
+- **Rule presets**: `recommendedPreset`, `strictPreset`, and `wcagAaBaselinePreset`.
+- **Diagnostics utilities**: stable IDs, source location helpers, and severity mapping.
+- **Reporting helpers**: pretty, JSON, and machine-oriented output formats.
+- **Adapter primitives**: utilities for building integrations in other packages.
 
-### Engine Operations
+## Core API
 
 - `registerRule(rule)` / `unregisterRule(ruleId)`: mutate runtime rule registry.
 - `listRules()`: deterministic rule list sorted by rule id.
@@ -42,7 +45,7 @@ console.log(result.diagnostics);
 - `runIncremental({ changes })`: batch-style incremental audit API for local-dev workflows.
 - `createAuditSession()`: explicit session lifecycle for file-watcher/dev-server usage.
 
-## Session Data Flow
+## Integration Flow
 
 ```mermaid
 flowchart LR
@@ -61,29 +64,3 @@ flowchart LR
 - `recommendedPreset`: low-noise default for most integrations.
 - `strictPreset`: full core ruleset for strict CI/dev policies.
 - `wcagAaBaselinePreset`: WCAG AA oriented baseline.
-
-## Semver and Stability
-
-- `BETTERA11Y_API_VERSION` provides protocol-level compatibility signaling.
-- Top-level exports are semver-governed and contract-tested.
-- Existing rule ids and diagnostic shape are compatibility-sensitive.
-- Breaking changes to public contracts require a major version bump.
-
-## Changelog Policy
-
-This project follows Keep a Changelog style entries and semantic versioning.
-See `CHANGELOG.md` for release notes.
-
-## Release Process
-
-- Commits must follow the Conventional Commits format (`feat:`, `fix:`, optional scope, and `BREAKING CHANGE` footer when needed).
-- GitHub Actions enforces commit formatting on pull requests via commitlint.
-- On merges to `main`, Release Please opens or updates a Release PR that:
-  - updates `CHANGELOG.md`
-  - bumps `package.json` version according to SemVer rules inferred from commits
-- When the Release PR is merged, GitHub creates a release and a publish workflow releases the package to npm.
-
-Required repository secret:
-
-- `NPM_TOKEN` with publish access for the npm package.
-- `RELEASE_PLEASE_TOKEN` (PAT or fine-grained token) with repo write permissions so release creation can trigger downstream workflows.
