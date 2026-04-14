@@ -5,6 +5,19 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.0](https://github.com/bettera11y/bettera11y/compare/v0.3.1...v0.4.0) (2026-04-14)
+
+
+### Features
+
+* **style:** add contrast and readability auditing rules ([12a8b8e](https://github.com/bettera11y/bettera11y/commit/12a8b8eaf9caaec755805fd3a8d067e0ace51021))
+* **wcag:** align rule metadata to wcag 2.1 aa ([7139488](https://github.com/bettera11y/bettera11y/commit/7139488e141ad8978b1920e144d4ae062466ff56))
+
+
+### Documentation
+
+* **codebase:** harden source docs and readability ([21c25d3](https://github.com/bettera11y/bettera11y/commit/21c25d339cf805e5ff9fdfa597580f32c4753bef))
+
 ## [0.3.1](https://github.com/bettera11y/bettera11y/compare/v0.3.0...v0.3.1) (2026-04-14)
 
 
