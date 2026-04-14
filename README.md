@@ -86,3 +86,4 @@ See `CHANGELOG.md` for release notes.
 Required repository secret:
 
 - `NPM_TOKEN` with publish access for the npm package.
+- `RELEASE_PLEASE_TOKEN` (PAT or fine-grained token) with repo write permissions so release creation can trigger downstream workflows.
