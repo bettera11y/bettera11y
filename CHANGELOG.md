@@ -5,6 +5,18 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.0](https://github.com/bettera11y/bettera11y/compare/v0.2.1...v0.3.0) (2026-04-14)
+
+
+### Features
+
+* **api:** introduce prettier-style audit input and parser normalizers ([0e21134](https://github.com/bettera11y/bettera11y/commit/0e2113414f88e43d135af8d1f3ac4895d5429f08))
+
+
+### Documentation
+
+* **readme:** streamline package overview and usage sections ([613cc32](https://github.com/bettera11y/bettera11y/commit/613cc321016a3e658b3ca8ce39d635469007511b))
+
 ## [0.2.1](https://github.com/bettera11y/bettera11y/compare/v0.2.0...v0.2.1) (2026-04-14)
 
 
