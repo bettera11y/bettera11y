@@ -73,3 +73,16 @@ flowchart LR
 
 This project follows Keep a Changelog style entries and semantic versioning.
 See `CHANGELOG.md` for release notes.
+
+## Release Process
+
+- Commits must follow the Conventional Commits format (`feat:`, `fix:`, optional scope, and `BREAKING CHANGE` footer when needed).
+- GitHub Actions enforces commit formatting on pull requests via commitlint.
+- On merges to `main`, Release Please opens or updates a Release PR that:
+  - updates `CHANGELOG.md`
+  - bumps `package.json` version according to SemVer rules inferred from commits
+- When the Release PR is merged, GitHub creates a release and a publish workflow releases the package to npm.
+
+Required repository secret:
+
+- `NPM_TOKEN` with publish access for the npm package.

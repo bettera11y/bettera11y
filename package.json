@@ -25,6 +25,7 @@
     "dev": "tsup --watch",
     "typecheck": "tsc --noEmit",
     "lint": "tsc --noEmit",
+    "commitlint": "commitlint --from=HEAD~1 --to=HEAD",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "test": "vitest run",
@@ -35,6 +36,8 @@
     "jsdom": "^25.0.1"
   },
   "devDependencies": {
+    "@commitlint/cli": "^19.8.0",
+    "@commitlint/config-conventional": "^19.8.0",
     "@types/jsdom": "^21.1.7",
     "@types/node": "^22.15.3",
     "prettier": "^3.5.3",
