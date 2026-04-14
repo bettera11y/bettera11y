@@ -34,7 +34,9 @@ export const invalidAriaRule: RuleDefinition = {
         description: "Detect invalid aria attributes and values.",
         category: "aria",
         defaultSeverity: "error",
-        tags: ["aria", "wcag-4.1.2"]
+        tags: ["aria", "wcag-4.1.2", "wcag-2.1-aa"],
+        wcagAlignment: "normative",
+        wcagCriteria: ["4.1.2"]
     },
     check({ document, locate }) {
         if (!document) return [];
@@ -79,7 +81,10 @@ export const interactiveRoleNameRule: RuleDefinition = {
         description: "Detect custom interactive roles without accessible names.",
         category: "aria",
         defaultSeverity: "warn",
-        tags: ["aria", "roles"]
+        tags: ["aria", "roles", "wcag-4.1.2", "heuristic"],
+        wcagAlignment: "heuristic",
+        wcagCriteria: ["4.1.2"],
+        wcagNotes: "Custom-role naming checks are static approximations and may require semantic intent review."
     },
     check({ document, locate }) {
         if (!document) return [];
@@ -109,7 +114,9 @@ export const positiveTabindexRule: RuleDefinition = {
         description: "Detect positive tabindex usage.",
         category: "keyboard",
         defaultSeverity: "warn",
-        tags: ["keyboard", "focus-order"]
+        tags: ["keyboard", "focus-order", "heuristic"],
+        wcagAlignment: "heuristic",
+        wcagNotes: "Positive tabindex is treated as a keyboard-order heuristic signal, not an automatic WCAG failure."
     },
     check({ document, locate }) {
         if (!document) return [];

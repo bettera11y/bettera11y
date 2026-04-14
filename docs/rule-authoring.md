@@ -13,7 +13,10 @@ export const myRule: RuleDefinition = {
         description: "What the rule checks",
         category: "semantics",
         defaultSeverity: "warn",
-        tags: ["custom"]
+        tags: ["custom"],
+        wcagAlignment: "heuristic", // or "normative"
+        wcagCriteria: ["1.3.1"], // only for normative mappings
+        wcagNotes: "Explain limitations for static or heuristic checks."
     },
     async check(context) {
         // return diagnostics
@@ -45,3 +48,9 @@ optionsSchema: {
     minFontSizePx: { type: "number", defaultValue: 12 }
 }
 ```
+
+## WCAG Metadata Guidance
+
+- Use `wcagAlignment: "normative"` only when the check directly corresponds to a WCAG success criterion.
+- Use `wcagAlignment: "heuristic"` for proxy checks, best-practice warnings, or checks with known static-analysis limits.
+- Add `wcagCriteria` for normative checks and `wcagNotes` to explain confidence/limitations where needed.

@@ -14,6 +14,8 @@ export interface RuleCapabilities {
     supportsIncremental?: boolean;
 }
 
+export type RuleWcagAlignment = "normative" | "heuristic";
+
 export interface RuleMeta {
     id: string;
     description: string;
@@ -21,6 +23,9 @@ export interface RuleMeta {
     defaultSeverity: Severity;
     docsUrl?: string;
     tags?: string[];
+    wcagAlignment?: RuleWcagAlignment;
+    wcagCriteria?: string[];
+    wcagNotes?: string;
     capabilities?: RuleCapabilities;
     optionsSchema?: RuleOptionsSchema;
 }

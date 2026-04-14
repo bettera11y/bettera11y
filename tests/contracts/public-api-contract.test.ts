@@ -37,4 +37,17 @@ describe("public API contract", () => {
         expect(Array.isArray(result.diagnostics)).toBe(true);
         expect(typeof result.metadata.durationMs).toBe("number");
     });
+
+    it("exposes wcag metadata and keeps wcag baseline normative-only", () => {
+        const colorContrast = api.strictPreset.find((rule) => rule.meta.id === "color-contrast");
+        const imageAlt = api.strictPreset.find((rule) => rule.meta.id === "image-alt");
+
+        expect(colorContrast?.meta.wcagAlignment).toBe("heuristic");
+        expect(imageAlt?.meta.wcagAlignment).toBe("normative");
+        expect(imageAlt?.meta.wcagCriteria).toContain("1.1.1");
+
+        const baselineIds = new Set(api.wcagAaBaselinePreset.map((rule) => rule.meta.id));
+        expect(baselineIds.has("color-contrast")).toBe(false);
+        expect(baselineIds.has("text-readability")).toBe(false);
+    });
 });

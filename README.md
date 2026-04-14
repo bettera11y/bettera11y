@@ -83,7 +83,13 @@ flowchart LR
 
 - `recommendedPreset`: low-noise default for most integrations.
 - `strictPreset`: full core ruleset for strict CI/dev policies.
-- `wcagAaBaselinePreset`: WCAG AA oriented baseline.
+- `wcagAaBaselinePreset`: WCAG 2.1 AA normative baseline only.
+
+## WCAG Alignment Policy
+
+- Rules tagged with `meta.wcagAlignment: "normative"` map directly to WCAG 2.1 AA success criteria.
+- Rules tagged with `meta.wcagAlignment: "heuristic"` are static-analysis proxies or best-practice checks.
+- Heuristic rules are useful for developer feedback loops but are not strict pass/fail WCAG conformance claims.
 
 ## Style Auditing Notes
 

@@ -7,7 +7,9 @@ export const imageAltRule: RuleDefinition = {
         description: "Detect images without alternative text.",
         category: "media",
         defaultSeverity: "warn",
-        tags: ["wcag-1.1.1"]
+        tags: ["wcag-1.1.1", "wcag-2.1-aa"],
+        wcagAlignment: "normative",
+        wcagCriteria: ["1.1.1"]
     },
     check({ document, locate }) {
         if (!document) return [];
@@ -33,7 +35,9 @@ export const formControlLabelRule: RuleDefinition = {
         description: "Detect form controls without labels.",
         category: "forms",
         defaultSeverity: "error",
-        tags: ["forms", "wcag-3.3.2"]
+        tags: ["forms", "wcag-3.3.2", "wcag-2.1-aa"],
+        wcagAlignment: "normative",
+        wcagCriteria: ["3.3.2"]
     },
     check({ document, locate }) {
         if (!document) return [];
@@ -70,7 +74,9 @@ export const buttonAccessibleNameRule: RuleDefinition = {
         description: "Ensure buttons have accessible names.",
         category: "aria",
         defaultSeverity: "error",
-        tags: ["controls", "wcag-4.1.2"]
+        tags: ["controls", "wcag-4.1.2", "wcag-2.1-aa"],
+        wcagAlignment: "normative",
+        wcagCriteria: ["4.1.2"]
     },
     check({ document, locate }) {
         if (!document) return [];

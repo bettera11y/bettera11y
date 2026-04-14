@@ -6,7 +6,9 @@ export const duplicateIdRule: RuleDefinition = {
         description: "Detect duplicate element ids.",
         category: "structure",
         defaultSeverity: "error",
-        tags: ["wcag-4.1.1"]
+        tags: ["wcag-4.1.1", "wcag-2.1-aa"],
+        wcagAlignment: "normative",
+        wcagCriteria: ["4.1.1"]
     },
     check({ document, createSelector, locate }) {
         if (!document) return [];
@@ -44,7 +46,9 @@ export const duplicateH1Rule: RuleDefinition = {
         description: "Detect multiple h1 elements in one document.",
         category: "structure",
         defaultSeverity: "warn",
-        tags: ["headings"]
+        tags: ["headings", "heuristic"],
+        wcagAlignment: "heuristic",
+        wcagNotes: "Multiple h1 detection is a document-outline heuristic, not a direct WCAG failure."
     },
     check({ document, locate }) {
         if (!document) return [];
@@ -67,7 +71,10 @@ export const headingOrderRule: RuleDefinition = {
         description: "Detect heading level jumps.",
         category: "semantics",
         defaultSeverity: "warn",
-        tags: ["headings", "wcag-1.3.1"]
+        tags: ["headings", "wcag-1.3.1", "heuristic"],
+        wcagAlignment: "heuristic",
+        wcagCriteria: ["1.3.1"],
+        wcagNotes: "Heading-level jumps are a static proxy signal for structural issues and may require manual review."
     },
     check({ document, locate }) {
         if (!document) return [];
@@ -98,7 +105,9 @@ export const htmlLangRule: RuleDefinition = {
         description: "Ensure html element defines a language.",
         category: "semantics",
         defaultSeverity: "error",
-        tags: ["wcag-3.1.1"]
+        tags: ["wcag-3.1.1", "wcag-2.1-aa"],
+        wcagAlignment: "normative",
+        wcagCriteria: ["3.1.1"]
     },
     check({ document, locate }) {
         if (!document) return [];

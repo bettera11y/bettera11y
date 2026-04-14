@@ -308,7 +308,11 @@ export const colorContrastRule: RuleDefinition = {
         description: "Detect low-contrast text against background colors in inline styles and CSS.",
         category: "style",
         defaultSeverity: "warn",
-        tags: ["wcag-1.4.3", "style", "contrast"],
+        tags: ["wcag-1.4.3", "style", "contrast", "heuristic"],
+        wcagAlignment: "heuristic",
+        wcagCriteria: ["1.4.3"],
+        wcagNotes:
+            "Contrast checks are WCAG-informed but computed from static style context and may miss dynamic cascade/layout effects.",
         optionsSchema: {
             minContrastNormal: {
                 type: "number",
@@ -350,7 +354,9 @@ export const textReadabilityRule: RuleDefinition = {
         description: "Detect small text and compressed line-height that can reduce readability.",
         category: "style",
         defaultSeverity: "warn",
-        tags: ["readability", "typography"],
+        tags: ["readability", "typography", "heuristic"],
+        wcagAlignment: "heuristic",
+        wcagNotes: "Readability thresholds are best-practice heuristics and are not direct WCAG pass/fail criteria.",
         optionsSchema: {
             minFontSizePx: {
                 type: "number",

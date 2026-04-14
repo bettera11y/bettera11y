@@ -6,7 +6,10 @@ export const mainLandmarkRule: RuleDefinition = {
         description: "Require exactly one main landmark.",
         category: "landmarks",
         defaultSeverity: "warn",
-        tags: ["landmarks", "wcag-1.3.1"]
+        tags: ["landmarks", "wcag-1.3.1", "heuristic"],
+        wcagAlignment: "heuristic",
+        wcagCriteria: ["1.3.1"],
+        wcagNotes: "Main-landmark count checks are structural heuristics and should be reviewed in page-context."
     },
     check({ document, locate }) {
         if (!document) return [];

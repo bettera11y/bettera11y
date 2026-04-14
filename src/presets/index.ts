@@ -22,13 +22,9 @@ export const strictPreset: RuleDefinition[] = [...coreRules];
 
 export const wcagAaBaselinePreset: RuleDefinition[] = byId([
     "duplicate-id",
-    "heading-order",
     "html-lang",
     "image-alt",
     "form-control-label",
     "button-accessible-name",
-    "invalid-aria",
-    "main-landmark",
-    "positive-tabindex",
-    "color-contrast"
+    "invalid-aria"
 ]);

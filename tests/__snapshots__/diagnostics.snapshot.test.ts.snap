@@ -25,6 +25,7 @@ exports[`diagnostics snapshots > keeps diagnostics shape and remediation stable 
       "tags": [
         "controls",
         "wcag-4.1.2",
+        "wcag-2.1-aa",
       ],
     },
     "remediation": "Provide text content, aria-label, or aria-labelledby.",
@@ -112,6 +113,7 @@ exports[`diagnostics snapshots > keeps diagnostics shape and remediation stable 
       "tags": [
         "forms",
         "wcag-3.3.2",
+        "wcag-2.1-aa",
       ],
     },
     "remediation": "Associate a <label> or provide aria-label/aria-labelledby.",
@@ -141,6 +143,7 @@ exports[`diagnostics snapshots > keeps diagnostics shape and remediation stable 
       "tags": [
         "headings",
         "wcag-1.3.1",
+        "heuristic",
       ],
     },
     "remediation": "Use sequential heading levels to preserve document outline.",
@@ -169,6 +172,7 @@ exports[`diagnostics snapshots > keeps diagnostics shape and remediation stable 
       "docsUrl": undefined,
       "tags": [
         "wcag-3.1.1",
+        "wcag-2.1-aa",
       ],
     },
     "remediation": "Add a valid language code, for example <html lang="en">.",
@@ -197,6 +201,7 @@ exports[`diagnostics snapshots > keeps diagnostics shape and remediation stable 
       "docsUrl": undefined,
       "tags": [
         "wcag-1.1.1",
+        "wcag-2.1-aa",
       ],
     },
     "remediation": "Provide meaningful alt text or empty alt for decorative images.",
@@ -226,6 +231,8 @@ exports[`diagnostics snapshots > keeps diagnostics shape and remediation stable 
       "tags": [
         "aria",
         "roles",
+        "wcag-4.1.2",
+        "heuristic",
       ],
     },
     "remediation": "Provide aria-label, aria-labelledby, or meaningful text content.",
@@ -255,6 +262,7 @@ exports[`diagnostics snapshots > keeps diagnostics shape and remediation stable 
       "tags": [
         "aria",
         "wcag-4.1.2",
+        "wcag-2.1-aa",
       ],
     },
     "remediation": "Set aria-hidden to "true" or "false".",
