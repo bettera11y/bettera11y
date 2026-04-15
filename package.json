@@ -13,6 +13,11 @@
             "types": "./dist/index.d.ts",
             "import": "./dist/index.js",
             "require": "./dist/index.cjs"
+        },
+        "./browser": {
+            "types": "./dist/browser.d.ts",
+            "import": "./dist/browser.js",
+            "require": "./dist/browser.cjs"
         }
     },
     "files": [
@@ -38,6 +43,7 @@
     "dependencies": {
         "@babel/parser": "^7.29.2",
         "@babel/traverse": "^7.29.0",
+        "@noble/hashes": "^1.8.0",
         "jsdom": "^25.0.1",
         "marked": "^18.0.0"
     },
@@ -46,6 +52,7 @@
         "@commitlint/config-conventional": "^19.8.0",
         "@types/jsdom": "^21.1.7",
         "@types/node": "^22.15.3",
+        "happy-dom": "^17.4.4",
         "husky": "^9.1.7",
         "prettier": "^3.5.3",
         "tsup": "^8.4.0",

@@ -47,6 +47,10 @@ console.log(isClean);
 console.log(cssAudit.diagnostics);
 ```
 
+## Browser entry (`bettera11y/browser`)
+
+For **client-side bundles**, import `bettera11y/browser` instead of `bettera11y`. It exposes the same audit APIs and presets without depending on JSDOM. Use `createBrowserRuntimeAdapter()` when you want to pass an explicit `runtimeAdapter` to `audit()` (the default in that entry already uses the browser `DOMParser`).
+
 ## What You Get
 
 - **Core runtime**: run one-shot or incremental audits.

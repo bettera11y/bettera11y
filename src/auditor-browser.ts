@@ -1,11 +1,13 @@
 import type { AuditInput, AuditResult, AuditSession, IncrementalAuditRequest, SessionTelemetry } from "./contracts";
 import { buildAuditor, type AuditFunctionOptions } from "./auditor-impl";
-import { defaultRuntimeAdapter } from "./dom-node";
+import { createBrowserRuntimeAdapter } from "./dom-browser";
 
 export type { AuditFunctionOptions } from "./auditor-impl";
 
+const browserDefaultAdapter = createBrowserRuntimeAdapter();
+
 function resolveRuntimeAdapter(options: AuditFunctionOptions) {
-    return options.runtimeAdapter ?? defaultRuntimeAdapter;
+    return options.runtimeAdapter ?? browserDefaultAdapter;
 }
 
 export async function audit(
