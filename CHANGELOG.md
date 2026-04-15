@@ -5,6 +5,13 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.5.0](https://github.com/bettera11y/bettera11y/compare/v0.4.2...v0.5.0) (2026-04-15)
+
+
+### Features
+
+* add bettera11y/browser entry without JSDOM ([966de15](https://github.com/bettera11y/bettera11y/commit/966de15381f197c200f43a5e03df017de444e984))
+
 ## [0.4.2](https://github.com/bettera11y/bettera11y/compare/v0.4.1...v0.4.2) (2026-04-14)
 
 
