@@ -399,17 +399,23 @@ export function normalizeInputToHtml(
 }
 
 /**
- * Builds a deterministic selector for the provided element.
- *
- * @param element DOM element.
- * @returns CSS-like selector used in diagnostics.
+ * Escapes a string for use inside a double-quoted CSS attribute selector value.
  */
-export function createElementSelector(element: Element): string {
-    const id = element.getAttribute("id");
-    if (id) {
-        return `#${id}`;
-    }
+function quoteCssAttributeValue(value: string): string {
+    return `"${value.replace(/\\/g, "\\\\").replace(/"/g, '\\"').replace(/\n/g, "\\A ").replace(/\r/g, "\\D ")}"`;
+}
 
+/**
+ * Returns every element in `document` whose `id` attribute equals `idValue` (including duplicates).
+ */
+function elementsWithIdValue(document: Document, idValue: string): Element[] {
+    return Array.from(document.querySelectorAll("[id]")).filter((el) => el.getAttribute("id") === idValue);
+}
+
+/**
+ * Builds a CSS path using `:nth-of-type` segments from the element up to (but excluding) `html`.
+ */
+function buildCssPathSelectorFromElement(element: Element): string {
     const parts: string[] = [];
     let current: Element | null = element;
 
@@ -428,6 +434,31 @@ export function createElementSelector(element: Element): string {
     }
 
     return parts.join(" > ");
+}
+
+/**
+ * Builds a deterministic selector for the provided element.
+ *
+ * When an `id` is unique in the document, returns `[id="…"]` so `querySelector` resolves reliably
+ * (including ids that would otherwise need escaping for `#id`). When the same id appears on more
+ * than one node, returns a path of `:nth-of-type` segments so each duplicate can be targeted
+ * individually (hash selectors always match the first occurrence).
+ *
+ * @param element DOM element.
+ * @returns CSS-like selector used in diagnostics.
+ */
+export function createElementSelector(element: Element): string {
+    const doc = element.ownerDocument;
+    const idValue = element.getAttribute("id");
+
+    if (idValue && doc) {
+        const sameId = elementsWithIdValue(doc, idValue);
+        if (sameId.length === 1 && sameId[0] === element) {
+            return `[id=${quoteCssAttributeValue(idValue)}]`;
+        }
+    }
+
+    return buildCssPathSelectorFromElement(element);
 }
 
 /**

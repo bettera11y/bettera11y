@@ -34,14 +34,14 @@ exports[`diagnostics snapshots > keeps diagnostics shape and remediation stable 
   },
   {
     "category": "structure",
-    "id": "4303f03a854fe9a8",
+    "id": "c46bf16a31458f34",
     "location": {
       "end": {
         "column": 15,
         "line": 8,
         "offset": 176,
       },
-      "selector": "#dup",
+      "selector": "body:nth-of-type(1) > main:nth-of-type(1) > div:nth-of-type(1)",
       "sourcePath": "snapshot.html",
       "start": {
         "column": 11,
@@ -63,14 +63,14 @@ exports[`diagnostics snapshots > keeps diagnostics shape and remediation stable 
   },
   {
     "category": "structure",
-    "id": "6d65039727181998",
+    "id": "512c28828e6fd944",
     "location": {
       "end": {
         "column": 19,
         "line": 9,
         "offset": 211,
       },
-      "selector": "#dup",
+      "selector": "body:nth-of-type(1) > main:nth-of-type(1) > section:nth-of-type(1)",
       "sourcePath": "snapshot.html",
       "start": {
         "column": 11,
@@ -92,14 +92,14 @@ exports[`diagnostics snapshots > keeps diagnostics shape and remediation stable 
   },
   {
     "category": "forms",
-    "id": "efc447c4b528e24f",
+    "id": "e30cf7a0a739a895",
     "location": {
       "end": {
         "column": 17,
         "line": 10,
         "offset": 248,
       },
-      "selector": "#name",
+      "selector": "[id="name"]",
       "sourcePath": "snapshot.html",
       "start": {
         "column": 11,
